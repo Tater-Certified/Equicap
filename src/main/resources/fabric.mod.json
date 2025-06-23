@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "equicap",
+  "version": "${version}",
+  "name": "EquiCap",
+  "description": "Per-player configurable mob caps",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/equicap/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.github.tatercertified.equicap.Equicap"
+    ]
+  },
+  "mixins": [
+    "equicap.mixins.json"
+  ],
+  "depends": {
+    "fabric": "*",
+    "fabricloader": "*",
+    "minecraft": "1.21.6"
+  }
+}
