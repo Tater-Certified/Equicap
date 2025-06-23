@@ -25,7 +25,7 @@ public abstract class ServerWorldMixin implements EntityTransfer {
 
     @Override
     public void transferEntitiesOnLeave(ServerPlayerEntity player) {
-        if (this.getServer().getCurrentPlayerCount() != 0) {
+        if (this.getServer().getCurrentPlayerCount() != 1) {
             for (Entity entity : this.getEntityLookup().iterate()) {
                 if (needsTransferred(entity, player)) {
                     attemptTransfer((MobEntity) entity);
@@ -36,7 +36,7 @@ public abstract class ServerWorldMixin implements EntityTransfer {
 
     @Override
     public void transferEntitiesOnJoin(ServerPlayerEntity joining) {
-        if (this.getServer().getCurrentPlayerCount() == 1) {
+        if (this.getServer().getCurrentPlayerCount() == 0) {
             for (Entity entity : this.getEntityLookup().iterate()) {
                 if (needsPlayer(entity)) {
                     transfer((MobEntity) entity, entity.getType().getSpawnGroup(), joining);
