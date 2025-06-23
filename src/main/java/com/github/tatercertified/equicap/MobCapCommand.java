@@ -26,11 +26,12 @@ public class MobCapCommand {
                             if (context.getSource().isExecutedByPlayer()) {
                                 ServerPlayerEntity player = context.getSource().getPlayer();
                                 MutableText text = Text.empty();
+                                boolean first = true;
                                 for (SpawnGroup group : SpawnGroup.values()) {
                                     if (group == SpawnGroup.MISC) {
                                         continue;
                                     }
-                                    int total = group.getCapacity();
+                                    int total = ((MobCapTracker)player).adjustedMobCapMaxSize(group);
                                     int current = ((MobCapTracker)player).getPlayerMobCap(group);
                                     Formatting color;
                                     float percent = (float) current / total;
@@ -41,7 +42,12 @@ public class MobCapCommand {
                                     } else {
                                         color = Formatting.GREEN;
                                     }
-                                    text.append(Text.literal(group.asString() + ": ").formatted(Formatting.BOLD)).append(Text.literal(current + "/" + total).formatted(color)).append("\n");
+                                    if (!first) {
+                                        text.append("\n");
+                                    } else {
+                                        first = false;
+                                    }
+                                    text.append(Text.literal(group.asString() + ": ")).append(Text.literal(current + "/" + total).formatted(color));
                                 }
                                 context.getSource().sendFeedback(() -> text, false);
                                 return 1;
@@ -59,6 +65,8 @@ public class MobCapCommand {
                                                     int size = IntegerArgumentType.getInteger(context, "size");
 
                                                     ((MobCapAccess)(Object)group).setMobCapSize(size);
+                                                    Config.getInstance().spawnGroupCapacityOverrides.put(group, size);
+                                                    Config.getInstance().saveConfig();
                                                     context.getSource().sendFeedback(() -> Text.of("Set " + group.getName() + " per-player mob cap to " + size), true);
                                                     return 1;
                                                 })
@@ -75,6 +83,22 @@ public class MobCapCommand {
                                         })
                                 )
                         )
+                        .then(CommandManager.literal("merge")
+                                .executes(context -> {
+                                    context.getSource().sendFeedback(() -> Text.of("The current merge mode is " + Config.getInstance().mergeMode.getName()), false);
+                                    return 1;
+                                })
+                                .then(CommandManager.argument("mode", StringArgumentType.string())
+                                        .suggests(MERGE_MODE_SUGGESTIONS)
+                                        .executes(context -> {
+                                            MobCapMerge merge = getMergeMode(context, "mode");
+                                            Config.getInstance().mergeMode = merge;
+                                            Config.getInstance().saveConfig();
+                                            context.getSource().sendFeedback(() -> Text.of("Set merge mode to " + merge.name()), true);
+                                            return 1;
+                                        })
+                                )
+                        )
                 )
         );
     }
@@ -86,11 +110,26 @@ public class MobCapCommand {
         return builder.buildFuture();
     };
 
+    private static final SuggestionProvider<ServerCommandSource> MERGE_MODE_SUGGESTIONS = (context, builder) -> {
+        for (MobCapMerge merge : MobCapMerge.values()) {
+            builder.suggest(merge.getName());
+        }
+        return builder.buildFuture();
+    };
+
     private static SpawnGroup getSpawnGroup(CommandContext<ServerCommandSource> context, String name) throws CommandSyntaxException {
         String input = StringArgumentType.getString(context, name);
         return Arrays.stream(SpawnGroup.values())
                 .filter(g -> g.getName().equals(input))
                 .findFirst()
                 .orElseThrow(() -> CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().create("Invalid group: " + input));
+    }
+
+    private static MobCapMerge getMergeMode(CommandContext<ServerCommandSource> context, String name) throws CommandSyntaxException {
+        String input = StringArgumentType.getString(context, name);
+        return Arrays.stream(MobCapMerge.values())
+                .filter(g -> g.getName().equals(input))
+                .findFirst()
+                .orElseThrow(() -> CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().create("Invalid merge mode: " + input));
     }
 }

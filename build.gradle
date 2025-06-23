@@ -28,7 +28,8 @@ repositories {
 // Fabric modules
 Set<String> apiModules = [
         "fabric-api-base",
-        "fabric-command-api-v2"
+        "fabric-command-api-v2",
+        "fabric-networking-api-v1"
 ]
 
 dependencies {

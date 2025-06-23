@@ -18,7 +18,7 @@
     "equicap.mixins.json"
   ],
   "depends": {
-    "fabric": "*",
+
     "fabricloader": "*",
     "minecraft": "1.21.6"
   }
