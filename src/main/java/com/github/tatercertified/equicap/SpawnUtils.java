@@ -3,8 +3,6 @@ package com.github.tatercertified.equicap;
 import com.github.tatercertified.equicap.interfaces.MobCapTracker;
 import com.github.tatercertified.equicap.interfaces.SpawnedFrom;
 import com.github.tatercertified.equicap.mixin.SpawnHelperInvoker;
-import com.llamalad7.mixinextras.sugar.Share;
-import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.EntityData;
 import net.minecraft.entity.SpawnGroup;

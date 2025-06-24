@@ -5,7 +5,7 @@ public enum MobCapMerge {
     Combine("combine"),
     VanillaLike("vanilla-like");
 
-    private String name;
+    private final String name;
     MobCapMerge(String name) {
         this.name = name;
     }

@@ -7,7 +7,6 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.loader.impl.FabricLoaderImpl;
 import net.minecraft.entity.SpawnGroup;
-import org.apache.logging.log4j.core.jackson.MapEntry;
 
 import java.io.FileReader;
 import java.io.FileWriter;
