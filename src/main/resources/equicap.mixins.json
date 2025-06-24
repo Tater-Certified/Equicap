@@ -11,8 +11,11 @@
     "SpawnDensityCapperMixin",
     "SpawnGroupMixin",
     "SpawnHelperInfoAccessor",
-    "SpawnHelperMixin"
+    "SpawnHelperInvoker",
+    "SpawnHelperMixin",
+    "compat.CarpetMixin"
   ],
+  "plugin": "com.moulberry.mixinconstraints.ConstraintsMixinPlugin",
   "client": [
   ],
   "injectors": {
