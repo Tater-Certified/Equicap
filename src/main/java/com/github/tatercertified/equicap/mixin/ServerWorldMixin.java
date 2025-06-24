@@ -61,6 +61,11 @@ public abstract class ServerWorldMixin implements EntityTransfer {
         return count;
     }
 
+    @Override
+    public Iterable<Entity> getEntities() {
+        return this.getEntityLookup().iterate();
+    }
+
     private boolean needsTransferred(Entity entity, ServerPlayerEntity leaving) {
         return entity instanceof MobEntity mob &&
                 canDespawn(mob) &&

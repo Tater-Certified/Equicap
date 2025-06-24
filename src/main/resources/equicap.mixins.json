@@ -4,6 +4,7 @@
   "package": "com.github.tatercertified.equicap.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "DataTrackerInvoker",
     "LivingEntityMixin",
     "MobEntityMixin",
     "ServerPlayerEntityMixin",

@@ -2,6 +2,8 @@ package com.github.tatercertified.equicap;
 
 import com.github.tatercertified.equicap.interfaces.MobCapAccess;
 import com.github.tatercertified.equicap.interfaces.MobCapTracker;
+import com.github.tatercertified.equicap.interfaces.VisualDebug;
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -9,6 +11,9 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.argument.DimensionArgumentType;
+import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.command.argument.GameProfileArgumentType;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -19,9 +24,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.Map;
+import java.util.*;
 
 public class MobCapCommand {
     public static void registerCommand() {
@@ -116,6 +119,21 @@ public class MobCapCommand {
                                             }
                                         })
                                 )
+                                .then(CommandManager.literal("visual")
+                                        .executes(context -> {
+                                            VisualDebug.removeWatcher(context.getSource().getPlayer());
+                                            return 1;
+                                        })
+                                        .then(CommandManager.argument("player", EntityArgumentType.entities())
+                                                .executes(context -> {
+                                                    VisualDebug.removeWatcher(context.getSource().getPlayer());
+                                                    ServerPlayerEntity input = EntityArgumentType.getPlayer(context, "player");
+                                                    ((VisualDebug)context.getSource().getPlayer()).toggleDebugMarker(input, null);
+                                                    PacketUtils.addNewEntitiesToDebugRenderer(context.getSource().getPlayer(), input);
+                                                    return 1;
+                                                })
+                                        )
+                                )
                         )
                         .then(CommandManager.literal("help")
                                 .executes(context -> {
@@ -123,7 +141,11 @@ public class MobCapCommand {
                                             """
                                                     Welcome to EquiCap, a per-player mob cap solution
                                                     Command Usage:
-                                                    - debug: Prints out the number of mobs in the specified scope (player, dimension, or global)
+                                                    - debug:
+                                                        - player: Prints out the number of mobs in the player's mob cap
+                                                        - dimension: Prints out the number of mobs in dimension
+                                                        - global: Prints out the number of mobs in the server
+                                                        - visual: Toggles highlighting mobs that belong to the player
                                                     - get: Gets the max player mob cap size
                                                     - merge: Sets the mob cap merging mode:
                                                         None: No merging when players are close
