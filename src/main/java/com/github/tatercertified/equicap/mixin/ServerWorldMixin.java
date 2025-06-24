@@ -63,13 +63,13 @@ public abstract class ServerWorldMixin implements EntityTransfer {
 
     private boolean needsTransferred(Entity entity, ServerPlayerEntity leaving) {
         return entity instanceof MobEntity mob &&
-                !mob.isPersistent() &&
+                canDespawn(mob) &&
                 ((SpawnedFrom)mob).getSpawnedFrom() != leaving;
     }
 
     private boolean needsPlayer(Entity entity) {
         return entity instanceof MobEntity mob &&
-                !mob.isPersistent();
+                canDespawn(mob);
     }
 
     private void attemptTransfer(MobEntity entity) {
@@ -84,5 +84,9 @@ public abstract class ServerWorldMixin implements EntityTransfer {
         } else {
             entity.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER);
         }
+    }
+
+    private boolean canDespawn(MobEntity entity) {
+        return !entity.isPersistent() && entity.canImmediatelyDespawn(16641);
     }
 }
