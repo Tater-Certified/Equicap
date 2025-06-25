@@ -9,6 +9,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.argument.DimensionArgumentType;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -30,6 +31,7 @@ public class MobCapCommand {
     public static void registerCommand() {
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated, environment) ->
                 dispatcher.register(CommandManager.literal("equicap")
+                        .requires(Permissions.require("equicap.command", 4))
                         .then(CommandManager.literal("set")
                                 .then(CommandManager.argument("group", StringArgumentType.string())
                                         .suggests(SPAWN_GROUP_SUGGESTIONS)

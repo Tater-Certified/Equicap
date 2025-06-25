@@ -23,6 +23,7 @@ repositories {
         name = "Modrinth"
         url = "https://api.modrinth.com/maven"
     }
+    mavenCentral()
 }
 
 // Fabric modules
@@ -45,6 +46,8 @@ dependencies {
 
     include(implementation(annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-fabric:0.3.3")))
     include(implementation("com.moulberry:mixinconstraints:1.0.8"))
+    include(modImplementation('me.lucko:fabric-permissions-api:0.4.0'))
+
 }
 
 processResources {
