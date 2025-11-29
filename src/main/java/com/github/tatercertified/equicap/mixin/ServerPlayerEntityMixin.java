@@ -20,6 +20,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.EnumMap;
+import java.util.List;
 
 @Mixin(ServerPlayerEntity.class)
 public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDebug {
@@ -104,7 +105,7 @@ public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDe
     }
 
     @Override
-    public java.util.List<DataTracker.SerializedEntry<?>> setFakeGlow(boolean bool) {
+    public List<DataTracker.SerializedEntry<?>> setFakeGlow(boolean bool) {
         return null;
     }
 }

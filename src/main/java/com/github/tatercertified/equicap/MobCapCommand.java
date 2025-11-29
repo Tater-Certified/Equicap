@@ -16,6 +16,7 @@ import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.scoreboard.Team;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -125,7 +126,7 @@ public class MobCapCommand {
                                                         ServerPlayerEntity owner = ((SpawnedFrom)mob).getSpawnedFrom();
                                                         text.append("Spawned From: " + (owner != null ? owner.getName().getString() : "null") + "\n");
                                                         
-                                                        net.minecraft.scoreboard.Team team = context.getSource().getServer().getScoreboard().getScoreHolderTeam(entity.getNameForScoreboard());
+                                                        Team team = context.getSource().getServer().getScoreboard().getScoreHolderTeam(entity.getNameForScoreboard());
                                                         text.append("Team: " + (team != null ? team.getName() : "null") + "\n");
                                                         
                                                         text.append("Watched by you: " + ((VisualDebug)mob).isDebugMarkerToggled(context.getSource().getPlayer()));

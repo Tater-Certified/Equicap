@@ -18,6 +18,7 @@ import net.minecraft.util.Formatting;
 
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class PacketUtils {
@@ -59,12 +60,12 @@ public final class PacketUtils {
                 player.getEntityWorld().getScoreboard().addScoreHolderToTeam(entity.getNameForScoreboard(), team);
             }
         }
-        java.util.List<DataTracker.SerializedEntry<?>> entries = ((VisualDebug)entity).setFakeGlow(true);
+        List<DataTracker.SerializedEntry<?>> entries = ((VisualDebug)entity).setFakeGlow(true);
         player.networkHandler.sendPacket(new EntityTrackerUpdateS2CPacket(entity.getId(), entries));
     }
 
     public static void removeGlowPacket(ServerPlayerEntity player, MobEntity entity) {
-        java.util.List<DataTracker.SerializedEntry<?>> entries = ((VisualDebug)entity).setFakeGlow(false);
+        List<DataTracker.SerializedEntry<?>> entries = ((VisualDebug)entity).setFakeGlow(false);
         player.networkHandler.sendPacket(new EntityTrackerUpdateS2CPacket(entity.getId(), entries));
     }
 
