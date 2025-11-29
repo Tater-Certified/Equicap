@@ -15,12 +15,12 @@ public final class MobCapMergeManager {
     }
 
     private static void combine(ServerPlayerEntity player) {
-        int nearby = ((EntityTransfer) player.getWorld()).getNearbyPlayerCount(player);
+        int nearby = ((EntityTransfer) player.getEntityWorld()).getNearbyPlayerCount(player);
         ((MobCapTracker)player).adjustMobCapBy(1.0F / nearby);
     }
 
     private static void vanillalikeMerge(ServerPlayerEntity player) {
-        ServerPlayerEntity closest = (ServerPlayerEntity) player.getWorld().getClosestPlayer(player, 128);
+        ServerPlayerEntity closest = (ServerPlayerEntity) player.getEntityWorld().getClosestPlayer(player, 128);
         if (closest != null) {
             int chunksAway = (int) Math.sqrt(player.getBlockPos().getSquaredDistance(closest.getBlockPos())) / 16;
             if (chunksAway < 17) {

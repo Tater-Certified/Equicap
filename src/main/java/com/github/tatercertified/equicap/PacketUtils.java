@@ -14,7 +14,7 @@ public final class PacketUtils {
 
     public static void sendGlowPacket(ServerPlayerEntity player, MobEntity entity) {
         if (((SpawnedFrom)entity).getSpawnedFrom() == null) {
-            player.getScoreboard().addScoreHolderToTeam(entity.getNameForScoreboard(), RED_TEAM);
+            player.getEntityWorld().getScoreboard().addScoreHolderToTeam(entity.getNameForScoreboard(), RED_TEAM);
         }
         DataTracker tracker = ((VisualDebug)entity).setFakeGlow(true);
         player.networkHandler.sendPacket(new EntityTrackerUpdateS2CPacket(entity.getId(), tracker.getChangedEntries()));
@@ -27,7 +27,7 @@ public final class PacketUtils {
 
     public static void addNewEntitiesToDebugRenderer(ServerPlayerEntity watcher, ServerPlayerEntity input) {
         if (((VisualDebug)watcher).isDebugMarkerToggled(null)) {
-            ServerWorld world = (ServerWorld) watcher.getWorld();
+            ServerWorld world = (ServerWorld) watcher.getEntityWorld();
             for (Entity entity : ((EntityTransfer)world).getEntities()) {
                 if (entity instanceof MobEntity mob) {
                     ServerPlayerEntity spawnedFrom = ((SpawnedFrom)mob).getSpawnedFrom();

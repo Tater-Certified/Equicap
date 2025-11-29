@@ -79,7 +79,7 @@ public abstract class ServerWorldMixin implements EntityTransfer {
 
     private void attemptTransfer(MobEntity entity) {
         SpawnGroup group = entity.getType().getSpawnGroup();
-        ServerPlayerEntity nearest = (ServerPlayerEntity) entity.getWorld().getClosestPlayer(entity, group.getImmediateDespawnRange());
+        ServerPlayerEntity nearest = (ServerPlayerEntity) entity.getEntityWorld().getClosestPlayer(entity, group.getImmediateDespawnRange());
         transfer(entity, group, nearest);
     }
 

@@ -20,11 +20,11 @@ public class Equicap implements ModInitializer {
         });
 
         ServerPlayConnectionEvents.JOIN.register((serverPlayNetworkHandler, packetSender, minecraftServer) -> {
-            ((EntityTransfer) serverPlayNetworkHandler.getPlayer().getWorld()).transferEntitiesOnJoin(serverPlayNetworkHandler.getPlayer());
+            ((EntityTransfer) serverPlayNetworkHandler.getPlayer().getEntityWorld()).transferEntitiesOnJoin(serverPlayNetworkHandler.getPlayer());
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((serverPlayNetworkHandler, minecraftServer) -> {
-            ((EntityTransfer) serverPlayNetworkHandler.getPlayer().getWorld()).transferEntitiesOnLeave(serverPlayNetworkHandler.getPlayer());
+            ((EntityTransfer) serverPlayNetworkHandler.getPlayer().getEntityWorld()).transferEntitiesOnLeave(serverPlayNetworkHandler.getPlayer());
         });
     }
 }

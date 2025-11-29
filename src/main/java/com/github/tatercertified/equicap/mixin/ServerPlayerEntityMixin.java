@@ -80,9 +80,9 @@ public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDe
     public void toggleDebugMarker(ServerPlayerEntity input, ServerPlayerEntity watcher) {
         this.mobCapVisualTarget = input;
         if (this.mobCapVisualTarget == null) {
-            ((ServerPlayerEntity)(Object)this).getScoreboard().removeScoreHolderFromTeam(((ServerPlayerEntity)(Object)this).getNameForScoreboard(), PacketUtils.RED_TEAM);
+            ((ServerPlayerEntity)(Object)this).getEntityWorld().getScoreboard().removeScoreHolderFromTeam(((ServerPlayerEntity)(Object)this).getNameForScoreboard(), PacketUtils.RED_TEAM);
         } else {
-            ((ServerPlayerEntity)(Object)this).getScoreboard().addScoreHolderToTeam(((ServerPlayerEntity)(Object)this).getNameForScoreboard(), PacketUtils.RED_TEAM);
+            ((ServerPlayerEntity)(Object)this).getEntityWorld().getScoreboard().addScoreHolderToTeam(((ServerPlayerEntity)(Object)this).getNameForScoreboard(), PacketUtils.RED_TEAM);
         }
     }
 
