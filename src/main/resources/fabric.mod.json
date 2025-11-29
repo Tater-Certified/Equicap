@@ -4,8 +4,13 @@
   "version": "${version}",
   "name": "EquiCap",
   "description": "Per-player configurable mob caps",
-  "authors": [],
-  "contact": {},
+  "authors": [
+    "QPCrummer",
+    "noramibu"
+  ],
+  "contact": {
+    "discord": "https://discord.gg/JAb7gpbETC"
+  },
   "license": "MIT",
   "icon": "assets/equicap/icon.png",
   "environment": "*",
@@ -20,6 +25,6 @@
   "depends": {
     "fabric": "*",
     "fabricloader": "*",
-    "minecraft": ">=1.21.5"
+    "minecraft": ">=1.21.10"
   }
 }
