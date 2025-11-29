@@ -35,9 +35,6 @@ public abstract class ServerWorldMixin implements EntityTransfer {
             if (nearest != null) {
                 ((SpawnedFrom)mob).setSpawnedFrom(nearest);
                 ((MobCapTracker)nearest).addMob(group);
-                if (((MobCapTracker)nearest).isDebugLog()) {
-                    nearest.sendMessage(net.minecraft.text.Text.literal("[Equicap] Hooked spawn of " + entity.getType().getName().getString() + ". Assigned to " + nearest.getName().getString()), false);
-                }
             }
         }
     }

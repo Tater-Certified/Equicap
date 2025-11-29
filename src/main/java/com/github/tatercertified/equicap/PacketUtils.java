@@ -54,10 +54,11 @@ public final class PacketUtils {
     }
 
     public static void sendGlowPacket(ServerPlayerEntity player, MobEntity entity) {
-        if (player.getEntityWorld().getScoreboard().getScoreHolderTeam(entity.getNameForScoreboard()) == null) {
+        String teamName = entity.getNameForScoreboard();
+        if (player.getEntityWorld().getScoreboard().getScoreHolderTeam(teamName) == null) {
             Team team = LOW_TEAMS.getOrDefault(entity.getType().getSpawnGroup(), LOW_TEAMS.get(SpawnGroup.MISC));
             if (team != null) {
-                player.getEntityWorld().getScoreboard().addScoreHolderToTeam(entity.getNameForScoreboard(), team);
+                player.getEntityWorld().getScoreboard().addScoreHolderToTeam(teamName, team);
             }
         }
         List<DataTracker.SerializedEntry<?>> entries = ((VisualDebug)entity).setFakeGlow(true);

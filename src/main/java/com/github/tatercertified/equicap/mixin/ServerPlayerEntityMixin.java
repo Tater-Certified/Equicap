@@ -30,7 +30,6 @@ public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDe
 
     private ServerPlayerEntity mobCapVisualTarget;
     private int mobCapVisualTick;
-    private boolean debugLog;
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void equicap$fillMap(MinecraftServer server, ServerWorld world, GameProfile profile, SyncedClientOptions clientOptions, CallbackInfo ci) {
@@ -49,7 +48,6 @@ public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDe
         this.mobCapVisualTick++;
         if ((this.mobCapVisualTick %= 40) == 0) {
             PacketUtils.addNewEntitiesToDebugRenderer(((ServerPlayerEntity)(Object)this), this.mobCapVisualTarget);
-            // Team update logic is now inside PacketUtils
         }
     }
 
@@ -61,27 +59,11 @@ public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDe
     @Override
     public void addMob(SpawnGroup group) {
         this.caps.merge(group, 1, Integer::sum);
-        if (this.isDebugLog()) {
-            ((ServerPlayerEntity)(Object)this).sendMessage(net.minecraft.text.Text.literal("[Equicap] Added mob to " + group.getName() + " cap. New count: " + this.caps.get(group)), false);
-        }
     }
 
     @Override
     public void removeMob(SpawnGroup group) {
         this.caps.merge(group, -1, (oldValue, value) -> Math.max(0, oldValue + value));
-        if (this.isDebugLog()) {
-            ((ServerPlayerEntity)(Object)this).sendMessage(net.minecraft.text.Text.literal("[Equicap] Removed mob from " + group.getName() + " cap. New count: " + this.caps.get(group)), false);
-        }
-    }
-
-    @Override
-    public void setDebugLog(boolean enabled) {
-        this.debugLog = enabled;
-    }
-
-    @Override
-    public boolean isDebugLog() {
-        return this.debugLog;
     }
 
     @Override

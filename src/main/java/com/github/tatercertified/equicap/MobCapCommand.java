@@ -77,18 +77,6 @@ public class MobCapCommand {
                                 )
                         )
                         .then(CommandManager.literal("debug")
-                                .then(CommandManager.literal("log")
-                                        .executes(context -> {
-                                            if (context.getSource().isExecutedByPlayer()) {
-                                                ServerPlayerEntity player = context.getSource().getPlayer();
-                                                boolean current = ((MobCapTracker)player).isDebugLog();
-                                                ((MobCapTracker)player).setDebugLog(!current);
-                                                context.getSource().sendFeedback(() -> Text.of("Toggled debug log " + (current ? "OFF" : "ON")), false);
-                                                return 1;
-                                            }
-                                            return 0;
-                                        })
-                                )
                                 .then(CommandManager.literal("player")
                                         .executes(context -> {
                                             MutableText text = getPrintOut(null, context);
