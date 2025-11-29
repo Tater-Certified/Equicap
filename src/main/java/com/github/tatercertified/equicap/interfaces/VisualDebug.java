@@ -6,6 +6,8 @@ import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 
+import java.util.List;
+
 public interface VisualDebug {
     void toggleDebugMarker(ServerPlayerEntity input, ServerPlayerEntity watcher);
     boolean isDebugMarkerToggled(ServerPlayerEntity watcher);
@@ -20,6 +22,6 @@ public interface VisualDebug {
             ((VisualDebug)watcher).toggleDebugMarker(null, null);
         }
     }
-    DataTracker setFakeGlow(boolean bool);
+    List<DataTracker.SerializedEntry<?>> setFakeGlow(boolean bool);
 
 }

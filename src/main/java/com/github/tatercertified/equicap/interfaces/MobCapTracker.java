@@ -17,6 +17,8 @@ public interface MobCapTracker {
     }
     int adjustedMobCapMaxSize(SpawnGroup group);
     void adjustMobCapBy(float percent);
+    void setDebugLog(boolean enabled);
+    boolean isDebugLog();
     default EnumMap<SpawnGroup, int[]> getPlayerMobCapData() {
         EnumMap<SpawnGroup, int[]> count = new EnumMap<>(SpawnGroup.class);
         for (SpawnGroup group : SpawnGroup.values()) {

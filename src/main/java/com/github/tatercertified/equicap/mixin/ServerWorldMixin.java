@@ -15,6 +15,9 @@ import net.minecraft.world.entity.EntityLookup;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ServerWorld.class)
 public abstract class ServerWorldMixin implements EntityTransfer {
@@ -22,6 +25,22 @@ public abstract class ServerWorldMixin implements EntityTransfer {
     @Shadow protected abstract EntityLookup<Entity> getEntityLookup();
 
     @Shadow @NotNull public abstract MinecraftServer getServer();
+
+    @Inject(method = "spawnEntity", at = @At("HEAD"))
+    private void equicap$onSpawn(Entity entity, CallbackInfoReturnable<Boolean> cir) {
+        if (entity instanceof MobEntity mob && ((SpawnedFrom)mob).getSpawnedFrom() == null) {
+            if (!shouldTrack(mob)) return;
+            SpawnGroup group = mob.getType().getSpawnGroup();
+            ServerPlayerEntity nearest = (ServerPlayerEntity) entity.getEntityWorld().getClosestPlayer(entity, group.getImmediateDespawnRange());
+            if (nearest != null) {
+                ((SpawnedFrom)mob).setSpawnedFrom(nearest);
+                ((MobCapTracker)nearest).addMob(group);
+                if (((MobCapTracker)nearest).isDebugLog()) {
+                    nearest.sendMessage(net.minecraft.text.Text.literal("[Equicap] Hooked spawn of " + entity.getType().getName().getString() + ". Assigned to " + nearest.getName().getString()), false);
+                }
+            }
+        }
+    }
 
     @Override
     public void transferEntitiesOnLeave(ServerPlayerEntity player) {
@@ -68,13 +87,13 @@ public abstract class ServerWorldMixin implements EntityTransfer {
 
     private boolean needsTransferred(Entity entity, ServerPlayerEntity leaving) {
         return entity instanceof MobEntity mob &&
-                canDespawn(mob) &&
+                shouldTrack(mob) &&
                 ((SpawnedFrom)mob).getSpawnedFrom() != leaving;
     }
 
     private boolean needsPlayer(Entity entity) {
         return entity instanceof MobEntity mob &&
-                canDespawn(mob);
+                shouldTrack(mob);
     }
 
     private void attemptTransfer(MobEntity entity) {
@@ -86,12 +105,18 @@ public abstract class ServerWorldMixin implements EntityTransfer {
     private void transfer(MobEntity entity, SpawnGroup group, ServerPlayerEntity nearest) {
         if (nearest != null && ((MobCapTracker)nearest).canSpawn(group)) {
             ((MobCapTracker)nearest).addMob(group);
-        } else {
+        } else if (shouldDespawnOnUnload(entity)) {
             entity.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER);
+        } else {
+            ((SpawnedFrom)entity).setSpawnedFrom(null);
         }
     }
 
-    private boolean canDespawn(MobEntity entity) {
+    private boolean shouldDespawnOnUnload(MobEntity entity) {
         return !entity.isPersistent() && entity.canImmediatelyDespawn(16641);
+    }
+
+    private boolean shouldTrack(MobEntity entity) {
+        return !entity.isPersistent() && !entity.cannotDespawn();
     }
 }

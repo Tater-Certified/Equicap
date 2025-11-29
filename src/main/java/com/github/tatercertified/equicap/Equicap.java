@@ -15,8 +15,7 @@ public class Equicap implements ModInitializer {
         MobCapCommand.registerCommand();
 
         ServerLifecycleEvents.SERVER_STARTED.register(minecraftServer -> {
-            PacketUtils.RED_TEAM = minecraftServer.getScoreboard().addTeam("equicap");
-            PacketUtils.RED_TEAM.setColor(Formatting.RED);
+            PacketUtils.init(minecraftServer);
         });
 
         ServerPlayConnectionEvents.JOIN.register((serverPlayNetworkHandler, packetSender, minecraftServer) -> {

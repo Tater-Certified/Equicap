@@ -26,6 +26,8 @@ public abstract class MobEntityMixin extends LivingEntity implements VisualDebug
 
     @Shadow public abstract boolean canImmediatelyDespawn(double distanceSquared);
 
+    @Shadow public abstract boolean cannotDespawn();
+
     private ServerPlayerEntity spawnedFrom;
     private final List<ServerPlayerEntity> mobCapWatchers = new ArrayList<>();
 
@@ -62,15 +64,10 @@ public abstract class MobEntityMixin extends LivingEntity implements VisualDebug
     }
 
     @Override
-    public DataTracker setFakeGlow(boolean bool) {
-        DataTracker copy = DataTrackerInvoker.init(this, ((DataTrackerInvoker)this.dataTracker).getEntries());
+    public List<DataTracker.SerializedEntry<?>> setFakeGlow(boolean bool) {
         byte b = this.dataTracker.get(FLAGS);
-        if (bool) {
-            copy.set(FLAGS, (byte)(b | 1 << 6));
-        } else {
-            copy.set(FLAGS, (byte)(b & ~(1 << 6)));
-        }
-        return copy;
+        byte newValue = bool ? (byte)(b | 1 << 6) : (byte)(b & ~(1 << 6));
+        return List.of(DataTracker.SerializedEntry.of(FLAGS, newValue));
     }
 
     @Override
@@ -85,6 +82,6 @@ public abstract class MobEntityMixin extends LivingEntity implements VisualDebug
 
     @Override
     public boolean shouldBeInCap() {
-        return !this.isPersistent() && this.canImmediatelyDespawn(16641);
+        return !this.isPersistent() && !this.cannotDespawn();
     }
 }
