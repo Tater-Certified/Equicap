@@ -15,16 +15,15 @@ public class Equicap implements ModInitializer {
         MobCapCommand.registerCommand();
 
         ServerLifecycleEvents.SERVER_STARTED.register(minecraftServer -> {
-            PacketUtils.RED_TEAM = minecraftServer.getScoreboard().addTeam("equicap");
-            PacketUtils.RED_TEAM.setColor(Formatting.RED);
+            PacketUtils.init(minecraftServer);
         });
 
         ServerPlayConnectionEvents.JOIN.register((serverPlayNetworkHandler, packetSender, minecraftServer) -> {
-            ((EntityTransfer) serverPlayNetworkHandler.getPlayer().getWorld()).transferEntitiesOnJoin(serverPlayNetworkHandler.getPlayer());
+            ((EntityTransfer) serverPlayNetworkHandler.getPlayer().getEntityWorld()).transferEntitiesOnJoin(serverPlayNetworkHandler.getPlayer());
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((serverPlayNetworkHandler, minecraftServer) -> {
-            ((EntityTransfer) serverPlayNetworkHandler.getPlayer().getWorld()).transferEntitiesOnLeave(serverPlayNetworkHandler.getPlayer());
+            ((EntityTransfer) serverPlayNetworkHandler.getPlayer().getEntityWorld()).transferEntitiesOnLeave(serverPlayNetworkHandler.getPlayer());
         });
     }
 }

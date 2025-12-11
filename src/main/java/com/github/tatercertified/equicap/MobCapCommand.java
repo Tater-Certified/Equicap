@@ -2,8 +2,8 @@ package com.github.tatercertified.equicap;
 
 import com.github.tatercertified.equicap.interfaces.MobCapAccess;
 import com.github.tatercertified.equicap.interfaces.MobCapTracker;
+import com.github.tatercertified.equicap.interfaces.SpawnedFrom;
 import com.github.tatercertified.equicap.interfaces.VisualDebug;
-import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -13,9 +13,10 @@ import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.argument.DimensionArgumentType;
 import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.SpawnGroup;
+import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.scoreboard.Team;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -86,6 +87,45 @@ public class MobCapCommand {
                                                 return 0;
                                             }
                                         })
+                                        .then(CommandManager.argument("target", EntityArgumentType.player())
+                                                .executes(context -> {
+                                                    ServerPlayerEntity target = EntityArgumentType.getPlayer(context, "target");
+                                                    MutableText text = getPrintOut(((MobCapTracker)target).getPlayerMobCapData(), context);
+                                                    if (text != null) {
+                                                        context.getSource().sendFeedback(() -> text, false);
+                                                        return 1;
+                                                    } else {
+                                                        return 0;
+                                                    }
+                                                })
+                                        )
+                                )
+                                .then(CommandManager.literal("check")
+                                        .then(CommandManager.argument("target", EntityArgumentType.entity())
+                                                .executes(context -> {
+                                                    Entity entity = EntityArgumentType.getEntity(context, "target");
+                                                    if (entity instanceof MobEntity mob) {
+                                                        MutableText text = Text.literal("Debug info for " + entity.getName().getString() + ":\n");
+                                                        text.append("UUID: " + entity.getUuidAsString() + "\n");
+                                                        text.append("Group: " + mob.getType().getSpawnGroup().getName() + "\n");
+                                                        text.append("Persistent: " + mob.isPersistent() + "\n");
+                                                        text.append("Cannot Despawn: " + mob.cannotDespawn() + "\n");
+                                                        text.append("Should Track: " + ((SpawnedFrom)mob).shouldBeInCap() + "\n");
+                                                        ServerPlayerEntity owner = ((SpawnedFrom)mob).getSpawnedFrom();
+                                                        text.append("Spawned From: " + (owner != null ? owner.getName().getString() : "null") + "\n");
+                                                        
+                                                        Team team = context.getSource().getServer().getScoreboard().getScoreHolderTeam(entity.getNameForScoreboard());
+                                                        text.append("Team: " + (team != null ? team.getName() : "null") + "\n");
+                                                        
+                                                        text.append("Watched by you: " + ((VisualDebug)mob).isDebugMarkerToggled(context.getSource().getPlayer()));
+                                                        
+                                                        context.getSource().sendFeedback(() -> text, false);
+                                                    } else {
+                                                        context.getSource().sendError(Text.of("Target is not a mob"));
+                                                    }
+                                                    return 1;
+                                                })
+                                        )
                                 )
                                 .then(CommandManager.literal("dimension")
                                         .executes(context -> {
@@ -123,7 +163,24 @@ public class MobCapCommand {
                                 )
                                 .then(CommandManager.literal("visual")
                                         .executes(context -> {
-                                            VisualDebug.removeWatcher(context.getSource().getPlayer());
+                                            ServerPlayerEntity player = context.getSource().getPlayer();
+                                            if (((VisualDebug)player).isDebugMarkerToggled(null)) {
+                                                VisualDebug.removeWatcher(player);
+                                                context.getSource().sendFeedback(() -> Text.of("Disabled visual debug"), false);
+                                            } else {
+                                                ((VisualDebug)player).toggleDebugMarker(player, null);
+                                                PacketUtils.addNewEntitiesToDebugRenderer(player, player);
+                                                MutableText msg = Text.literal("Enabled visual debug for self. Colors: ");
+                                                msg.append(Text.literal("Monster").formatted(Formatting.RED)).append(", ");
+                                                msg.append(Text.literal("Creature").formatted(Formatting.GREEN)).append(", ");
+                                                msg.append(Text.literal("Ambient").formatted(Formatting.GRAY)).append(", ");
+                                                msg.append(Text.literal("Axolotls").formatted(Formatting.LIGHT_PURPLE)).append(", ");
+                                                msg.append(Text.literal("U.Water").formatted(Formatting.BLUE)).append(", ");
+                                                msg.append(Text.literal("Water").formatted(Formatting.AQUA)).append(", ");
+                                                msg.append(Text.literal("Misc").formatted(Formatting.YELLOW));
+                                                msg.append(Text.literal("\n(Darker colors indicate >75% cap usage)"));
+                                                context.getSource().sendFeedback(() -> msg, false);
+                                            }
                                             return 1;
                                         })
                                         .then(CommandManager.argument("player", EntityArgumentType.entities())

@@ -20,6 +20,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.EnumMap;
+import java.util.List;
 
 @Mixin(ServerPlayerEntity.class)
 public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDebug {
@@ -47,7 +48,6 @@ public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDe
         this.mobCapVisualTick++;
         if ((this.mobCapVisualTick %= 40) == 0) {
             PacketUtils.addNewEntitiesToDebugRenderer(((ServerPlayerEntity)(Object)this), this.mobCapVisualTarget);
-            TeamS2CPacket.updateTeam(PacketUtils.RED_TEAM, true);
         }
     }
 
@@ -79,11 +79,6 @@ public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDe
     @Override
     public void toggleDebugMarker(ServerPlayerEntity input, ServerPlayerEntity watcher) {
         this.mobCapVisualTarget = input;
-        if (this.mobCapVisualTarget == null) {
-            ((ServerPlayerEntity)(Object)this).getScoreboard().removeScoreHolderFromTeam(((ServerPlayerEntity)(Object)this).getNameForScoreboard(), PacketUtils.RED_TEAM);
-        } else {
-            ((ServerPlayerEntity)(Object)this).getScoreboard().addScoreHolderToTeam(((ServerPlayerEntity)(Object)this).getNameForScoreboard(), PacketUtils.RED_TEAM);
-        }
     }
 
     @Override
@@ -92,7 +87,7 @@ public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDe
     }
 
     @Override
-    public DataTracker setFakeGlow(boolean bool) {
+    public List<DataTracker.SerializedEntry<?>> setFakeGlow(boolean bool) {
         return null;
     }
 }

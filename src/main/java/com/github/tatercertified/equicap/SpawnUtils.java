@@ -80,12 +80,12 @@ public final class SpawnUtils {
                                 entityData = mobEntity.initialize(world, world.getLocalDifficulty(mobEntity.getBlockPos()), SpawnReason.NATURAL, entityData);
                                 ++j;
                                 ++p;
+                                // Attach spawnFrom Player to Entity
+                                ((SpawnedFrom)mobEntity).setSpawnedFrom(spawnFrom);
+
                                 world.spawnEntityAndPassengers(mobEntity);
                                 // Attach Entity to spawnFrom Player
                                 ((MobCapTracker)spawnFrom).addMob(group);
-
-                                // Attach spawnFrom Player to Entity
-                                ((SpawnedFrom)mobEntity).setSpawnedFrom(spawnFrom);
 
                                 runner.run(mobEntity, chunk);
                                 if (j >= mobEntity.getLimitPerChunk()) {
