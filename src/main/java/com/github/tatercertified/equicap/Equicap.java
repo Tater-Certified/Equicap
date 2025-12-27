@@ -4,7 +4,6 @@ import com.github.tatercertified.equicap.interfaces.EntityTransfer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.minecraft.util.Formatting;
 
 public class Equicap implements ModInitializer {
 
@@ -14,9 +13,7 @@ public class Equicap implements ModInitializer {
         Config.getInstance().loadConfig();
         MobCapCommand.registerCommand();
 
-        ServerLifecycleEvents.SERVER_STARTED.register(minecraftServer -> {
-            PacketUtils.init(minecraftServer);
-        });
+        ServerLifecycleEvents.SERVER_STARTED.register(PacketUtils::init);
 
         ServerPlayConnectionEvents.JOIN.register((serverPlayNetworkHandler, packetSender, minecraftServer) -> {
             ((EntityTransfer) serverPlayNetworkHandler.getPlayer().getEntityWorld()).transferEntitiesOnJoin(serverPlayNetworkHandler.getPlayer());

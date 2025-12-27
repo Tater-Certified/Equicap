@@ -13,7 +13,7 @@ public interface VisualDebug {
     boolean isDebugMarkerToggled(ServerPlayerEntity watcher);
     static void removeWatcher(ServerPlayerEntity watcher) {
         if (((VisualDebug)watcher).isDebugMarkerToggled(null)) {
-            ServerWorld world = (ServerWorld) watcher.getEntityWorld();
+            ServerWorld world = watcher.getEntityWorld();
             for (Entity entity : ((EntityTransfer)world).getEntities()) {
                 if (entity instanceof MobEntity mob && ((VisualDebug)mob).isDebugMarkerToggled(watcher)) {
                     ((VisualDebug)mob).toggleDebugMarker(null, watcher);

@@ -24,8 +24,6 @@ import java.util.List;
 public abstract class MobEntityMixin extends LivingEntity implements VisualDebug, SpawnedFrom {
     @Shadow public abstract boolean isPersistent();
 
-    @Shadow public abstract boolean canImmediatelyDespawn(double distanceSquared);
-
     @Shadow public abstract boolean cannotDespawn();
 
     private ServerPlayerEntity spawnedFrom;
@@ -37,7 +35,7 @@ public abstract class MobEntityMixin extends LivingEntity implements VisualDebug
 
     @WrapOperation(method = "checkDespawn", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;getClosestPlayer(Lnet/minecraft/entity/Entity;D)Lnet/minecraft/entity/player/PlayerEntity;"))
     private PlayerEntity equicap$getCachedPlayer(World instance, Entity entity, double v, Operation<PlayerEntity> original) {
-        ServerPlayerEntity cached = ((SpawnedFrom)this).getSpawnedFrom();
+        ServerPlayerEntity cached = this.getSpawnedFrom();
         if (cached != null) {
             return cached;
         } else {

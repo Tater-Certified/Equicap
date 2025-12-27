@@ -4,10 +4,7 @@ import com.github.tatercertified.equicap.interfaces.*;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.network.packet.s2c.play.EntityStatusEffectS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityTrackerUpdateS2CPacket;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.Team;
@@ -72,7 +69,7 @@ public final class PacketUtils {
 
     public static void addNewEntitiesToDebugRenderer(ServerPlayerEntity watcher, ServerPlayerEntity input) {
         if (((VisualDebug)watcher).isDebugMarkerToggled(null)) {
-            ServerWorld world = (ServerWorld) watcher.getEntityWorld();
+            ServerWorld world = watcher.getEntityWorld();
             Scoreboard scoreboard = world.getScoreboard();
             
             MobCapTracker tracker = (MobCapTracker) input;
@@ -98,30 +95,24 @@ public final class PacketUtils {
                     if (((SpawnedFrom)mob).shouldBeInCap() &&
                             (spawnedFrom == null || spawnedFrom.equals(input))) {
                         
-                        boolean shouldGlow = !((VisualDebug)mob).isDebugMarkerToggled(watcher);
-                        
-                        if (shouldGlow) {
+                        if (!((VisualDebug)mob).isDebugMarkerToggled(watcher)) {
                             ((VisualDebug)mob).toggleDebugMarker(input, watcher);
                         }
                         
                         SpawnGroup group = mob.getType().getSpawnGroup();
                         boolean high = isHigh.getOrDefault(group, false);
                         Team team = high ? HIGH_TEAMS.get(group) : LOW_TEAMS.get(group);
-                        if (team == null) team = high ? HIGH_TEAMS.get(SpawnGroup.MISC) : LOW_TEAMS.get(SpawnGroup.MISC);
-                        
+
+                        if (team == null) {
+                            team = high ? HIGH_TEAMS.get(SpawnGroup.MISC) : LOW_TEAMS.get(SpawnGroup.MISC);
+                        }
+
                         if (team != null) {
                             scoreboard.addScoreHolderToTeam(entity.getNameForScoreboard(), team);
-                        }
-                        
-                        if (shouldGlow) {
                         }
                     }
                 }
             }
         }
-    }
-    
-    public static void applyGlow(ServerPlayerEntity watcher, Entity entity) {
-        watcher.networkHandler.sendPacket(new EntityStatusEffectS2CPacket(entity.getId(), new StatusEffectInstance(StatusEffects.GLOWING, -1, 0, true, false), false));
     }
 }

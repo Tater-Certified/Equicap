@@ -1,6 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.13-SNAPSHOT'
-    id 'maven-publish'
+    id 'fabric-loom' version '1.14-SNAPSHOT'
 }
 
 version = project.mod_version
@@ -8,13 +7,6 @@ group = project.maven_group
 
 base {
     archivesName = project.archives_base_name
-}
-
-
-fabricApi {
-    configureDataGeneration {
-        client = true
-    }
 }
 
 repositories {
@@ -37,8 +29,8 @@ dependencies {
 
     include(implementation(annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-fabric:0.3.3")))
     include(implementation("com.moulberry:mixinconstraints:1.0.8"))
-    include(modImplementation('me.lucko:fabric-permissions-api:0.4.0'))
-
+    include(modImplementation('me.lucko:fabric-permissions-api:0.6.1'))
+    modImplementation "maven.modrinth:carpet:1.4.194"
 }
 
 processResources {
@@ -80,23 +72,5 @@ java {
 jar {
     from("LICENSE") {
         rename { "${it}_${project.archivesBaseName}" }
-    }
-}
-
-// configure the maven publication
-publishing {
-    publications {
-        create("mavenJava", MavenPublication) {
-            artifactId = project.archives_base_name
-            from components.java
-        }
-    }
-
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-    repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
     }
 }

@@ -13,6 +13,7 @@ import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.argument.DimensionArgumentType;
 import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.command.permission.PermissionLevel;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.mob.MobEntity;
@@ -32,13 +33,13 @@ public class MobCapCommand {
     public static void registerCommand() {
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated, environment) ->
                 dispatcher.register(CommandManager.literal("equicap")
-                        .requires(Permissions.require("equicap.command", 4))
+                        .requires(Permissions.require("equicap.command", PermissionLevel.ADMINS))
                         .then(CommandManager.literal("set")
                                 .then(CommandManager.argument("group", StringArgumentType.string())
                                         .suggests(SPAWN_GROUP_SUGGESTIONS)
                                         .then(CommandManager.argument("size", IntegerArgumentType.integer(0))
                                                 .executes(context -> {
-                                                    SpawnGroup group = getSpawnGroup(context, "group");
+                                                    SpawnGroup group = getSpawnGroup(context);
                                                     int size = IntegerArgumentType.getInteger(context, "size");
 
                                                     ((MobCapAccess)(Object)group).setMobCapSize(size);
@@ -54,7 +55,7 @@ public class MobCapCommand {
                                 .then(CommandManager.argument("group", StringArgumentType.string())
                                         .suggests(SPAWN_GROUP_SUGGESTIONS)
                                         .executes(context -> {
-                                            SpawnGroup group = getSpawnGroup(context, "group");
+                                            SpawnGroup group = getSpawnGroup(context);
                                             context.getSource().sendFeedback(() -> Text.of(group.getName() + " per-player mob cap total is " + group.getCapacity()), false);
                                             return 1;
                                         })
@@ -68,7 +69,7 @@ public class MobCapCommand {
                                 .then(CommandManager.argument("mode", StringArgumentType.string())
                                         .suggests(MERGE_MODE_SUGGESTIONS)
                                         .executes(context -> {
-                                            MobCapMerge merge = getMergeMode(context, "mode");
+                                            MobCapMerge merge = getMergeMode(context);
                                             Config.getInstance().mergeMode = merge;
                                             Config.getInstance().saveConfig();
                                             context.getSource().sendFeedback(() -> Text.of("Set merge mode to " + merge.name()), true);
@@ -234,16 +235,16 @@ public class MobCapCommand {
         return builder.buildFuture();
     };
 
-    private static SpawnGroup getSpawnGroup(CommandContext<ServerCommandSource> context, String name) throws CommandSyntaxException {
-        String input = StringArgumentType.getString(context, name);
+    private static SpawnGroup getSpawnGroup(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        String input = StringArgumentType.getString(context, "group");
         return Arrays.stream(SpawnGroup.values())
                 .filter(g -> g.getName().equals(input))
                 .findFirst()
                 .orElseThrow(() -> CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().create("Invalid group: " + input));
     }
 
-    private static MobCapMerge getMergeMode(CommandContext<ServerCommandSource> context, String name) throws CommandSyntaxException {
-        String input = StringArgumentType.getString(context, name);
+    private static MobCapMerge getMergeMode(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        String input = StringArgumentType.getString(context, "mode");
         return Arrays.stream(MobCapMerge.values())
                 .filter(g -> g.getName().equals(input))
                 .findFirst()
@@ -267,13 +268,16 @@ public class MobCapCommand {
 
             for (Map.Entry<SpawnGroup, int[]> entry : data.entrySet()) {
                 SpawnGroup group = entry.getKey();
+
                 if (group == SpawnGroup.MISC) {
                     continue;
                 }
+
                 int current = entry.getValue()[0];
                 int total = entry.getValue()[1];
                 Formatting color;
                 float percent = (float) current / total;
+
                 if (percent >= 1.0) {
                     color = Formatting.RED;
                 } else if (percent > 0.75) {
@@ -281,11 +285,13 @@ public class MobCapCommand {
                 } else {
                     color = Formatting.GREEN;
                 }
-                if (!first) {
-                    text.append("\n");
-                } else {
+
+                if (first) {
                     first = false;
+                } else {
+                    text.append("\n");
                 }
+
                 text.append(Text.literal(group.asString() + ": ")).append(Text.literal(current + "/" + total).formatted(color));
             }
             return text;
