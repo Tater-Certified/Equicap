@@ -1,30 +1,29 @@
 package com.github.tatercertified.equicap.spawn_area;
 
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.SpawnHelper;
-import net.minecraft.world.chunk.WorldChunk;
-
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.NaturalSpawner;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 public class DynamicSpawnManager {
     private int maxSpawnAttemptsPerTick = 3;
     private final DynamicSpawnArea area;
-    public DynamicSpawnManager(Random random) {
+    public DynamicSpawnManager(RandomSource random) {
         this.area = new DynamicSpawnArea(random);
         // TODO Load values from config
     }
 
-    public void spawnMobs(ServerWorld world, SpawnHelper.Info info, List<SpawnGroup> spawnableGroups) {
-        for (PlayerEntity player : world.getPlayers()) {
-            BlockPos playerPos = player.getBlockPos();
+    public void spawnMobs(ServerLevel world, NaturalSpawner.SpawnState info, List<MobCategory> spawnableGroups) {
+        for (Player player : world.players()) {
+            BlockPos playerPos = player.blockPosition();
 
-            WorldChunk spawnChunk = this.area.getRandomChunk(playerPos, world);
+            LevelChunk spawnChunk = this.area.getRandomChunk(playerPos, world);
             for (int attempt = 0; attempt < maxSpawnAttemptsPerTick; attempt++) {
-                SpawnHelper.spawn(world, spawnChunk, info, spawnableGroups);
+                NaturalSpawner.spawnForChunk(world, spawnChunk, info, spawnableGroups);
             }
         }
     }

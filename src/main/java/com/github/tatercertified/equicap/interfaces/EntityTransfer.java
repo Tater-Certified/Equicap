@@ -1,11 +1,11 @@
 package com.github.tatercertified.equicap.interfaces;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 
 public interface EntityTransfer {
-    void transferEntitiesOnLeave(ServerPlayerEntity leaving);
-    void transferEntitiesOnJoin(ServerPlayerEntity joining);
-    int getNearbyPlayerCount(ServerPlayerEntity player);
-    Iterable<Entity> getEntities();
+    void transferEntitiesOnLeave(ServerPlayer leaving);
+    void transferEntitiesOnJoin(ServerPlayer joining);
+    int getNearbyPlayerCount(ServerPlayer player);
+    Iterable<Entity> equicap$getAllEntities();
 }

@@ -5,37 +5,37 @@ import com.github.tatercertified.equicap.interfaces.SpawnedFrom;
 import com.github.tatercertified.equicap.interfaces.VisualDebug;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 
-@Mixin(MobEntity.class)
+@Mixin(Mob.class)
 public abstract class MobEntityMixin extends LivingEntity implements VisualDebug, SpawnedFrom {
-    @Shadow public abstract boolean isPersistent();
+    @Shadow public abstract boolean isPersistenceRequired();
 
-    @Shadow public abstract boolean cannotDespawn();
+    @Shadow public abstract boolean requiresCustomPersistence();
 
-    private ServerPlayerEntity spawnedFrom;
-    private final List<ServerPlayerEntity> mobCapWatchers = new ArrayList<>();
+    private ServerPlayer spawnedFrom;
+    private final List<ServerPlayer> mobCapWatchers = new ArrayList<>();
 
-    protected MobEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
+    protected MobEntityMixin(EntityType<? extends LivingEntity> entityType, Level world) {
         super(entityType, world);
     }
 
-    @WrapOperation(method = "checkDespawn", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;getClosestPlayer(Lnet/minecraft/entity/Entity;D)Lnet/minecraft/entity/player/PlayerEntity;"))
-    private PlayerEntity equicap$getCachedPlayer(World instance, Entity entity, double v, Operation<PlayerEntity> original) {
-        ServerPlayerEntity cached = this.getSpawnedFrom();
+    @WrapOperation(method = "checkDespawn", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getNearestPlayer(Lnet/minecraft/world/entity/Entity;D)Lnet/minecraft/world/entity/player/Player;"))
+    private Player equicap$getCachedPlayer(Level instance, Entity entity, double v, Operation<Player> original) {
+        ServerPlayer cached = this.getSpawnedFrom();
         if (cached != null) {
             return cached;
         } else {
@@ -44,42 +44,42 @@ public abstract class MobEntityMixin extends LivingEntity implements VisualDebug
     }
 
     @Override
-    public void toggleDebugMarker(ServerPlayerEntity input, ServerPlayerEntity watcher) {
+    public void toggleDebugMarker(ServerPlayer input, ServerPlayer watcher) {
         if (this.isDebugMarkerToggled(watcher)) {
-            PacketUtils.removeGlowPacket(watcher, ((MobEntity)(Object)this));
+            PacketUtils.removeGlowPacket(watcher, ((Mob)(Object)this));
             this.mobCapWatchers.remove(watcher);
         } else {
             if (this.getSpawnedFrom() == null || this.getSpawnedFrom().equals(input)) {
-                PacketUtils.sendGlowPacket(watcher, ((MobEntity)(Object)this));
+                PacketUtils.sendGlowPacket(watcher, ((Mob)(Object)this));
                 this.mobCapWatchers.add(watcher);
             }
         }
     }
 
     @Override
-    public boolean isDebugMarkerToggled(ServerPlayerEntity watcher) {
+    public boolean isDebugMarkerToggled(ServerPlayer watcher) {
         return this.mobCapWatchers.contains(watcher);
     }
 
     @Override
-    public List<DataTracker.SerializedEntry<?>> setFakeGlow(boolean bool) {
-        byte b = this.dataTracker.get(FLAGS);
+    public List<SynchedEntityData.DataValue<?>> setFakeGlow(boolean bool) {
+        byte b = this.entityData.get(DATA_SHARED_FLAGS_ID);
         byte newValue = bool ? (byte)(b | 1 << 6) : (byte)(b & ~(1 << 6));
-        return List.of(DataTracker.SerializedEntry.of(FLAGS, newValue));
+        return List.of(SynchedEntityData.DataValue.create(DATA_SHARED_FLAGS_ID, newValue));
     }
 
     @Override
-    public void setSpawnedFrom(ServerPlayerEntity player) {
+    public void setSpawnedFrom(ServerPlayer player) {
         this.spawnedFrom = player;
     }
 
     @Override
-    public ServerPlayerEntity getSpawnedFrom() {
+    public ServerPlayer getSpawnedFrom() {
         return this.spawnedFrom;
     }
 
     @Override
     public boolean shouldBeInCap() {
-        return !this.isPersistent() && !this.cannotDespawn();
+        return !this.isPersistenceRequired() && !this.requiresCustomPersistence();
     }
 }

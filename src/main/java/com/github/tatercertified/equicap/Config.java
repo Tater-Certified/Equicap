@@ -6,8 +6,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.loader.impl.FabricLoaderImpl;
-import net.minecraft.entity.SpawnGroup;
-
+import net.minecraft.world.entity.MobCategory;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -23,7 +22,7 @@ public final class Config {
 
     // Values
     @Expose
-    EnumMap<SpawnGroup, Integer> spawnGroupCapacityOverrides = new EnumMap<>(SpawnGroup.class);
+    EnumMap<MobCategory, Integer> spawnGroupCapacityOverrides = new EnumMap<>(MobCategory.class);
     @Expose
     MobCapMerge mergeMode = MobCapMerge.VanillaLike;
 
@@ -55,7 +54,7 @@ public final class Config {
 
     private void parse(Config fromJson) {
         this.spawnGroupCapacityOverrides = fromJson.spawnGroupCapacityOverrides;
-        for (Map.Entry<SpawnGroup, Integer> entry : this.spawnGroupCapacityOverrides.entrySet()) {
+        for (Map.Entry<MobCategory, Integer> entry : this.spawnGroupCapacityOverrides.entrySet()) {
             ((MobCapAccess)(Object)entry.getKey()).setMobCapSize(entry.getValue());
         }
 

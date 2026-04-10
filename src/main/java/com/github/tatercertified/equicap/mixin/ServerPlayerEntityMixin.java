@@ -5,12 +5,12 @@ import com.github.tatercertified.equicap.PacketUtils;
 import com.github.tatercertified.equicap.interfaces.MobCapTracker;
 import com.github.tatercertified.equicap.interfaces.VisualDebug;
 import com.mojang.authlib.GameProfile;
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.MobCategory;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,18 +20,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.EnumMap;
 import java.util.List;
 
-@Mixin(ServerPlayerEntity.class)
+@Mixin(ServerPlayer.class)
 public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDebug {
-    private final EnumMap<SpawnGroup, Integer> caps = new EnumMap<>(SpawnGroup.class);
+    private final EnumMap<MobCategory, Integer> caps = new EnumMap<>(MobCategory.class);
     private float playerMobCapAdjustment = 1.0F;
     private int mergeTick;
 
-    private ServerPlayerEntity mobCapVisualTarget;
+    private ServerPlayer mobCapVisualTarget;
     private int mobCapVisualTick;
 
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void equicap$fillMap(MinecraftServer server, ServerWorld world, GameProfile profile, SyncedClientOptions clientOptions, CallbackInfo ci) {
-        for (SpawnGroup group : SpawnGroup.values()) {
+    private void equicap$fillMap(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions, CallbackInfo ci) {
+        for (MobCategory group : MobCategory.values()) {
             caps.put(group, 0);
         }
     }
@@ -40,27 +40,27 @@ public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDe
     private void equicap$adjustMobCap(CallbackInfo ci) {
         this.mergeTick++;
         if ((this.mergeTick %= 10) == 0) {
-            MobCapMergeManager.merge(((ServerPlayerEntity)(Object)this));
+            MobCapMergeManager.merge(((ServerPlayer)(Object)this));
         }
 
         this.mobCapVisualTick++;
         if ((this.mobCapVisualTick %= 40) == 0) {
-            PacketUtils.addNewEntitiesToDebugRenderer(((ServerPlayerEntity)(Object)this), this.mobCapVisualTarget);
+            PacketUtils.addNewEntitiesToDebugRenderer(((ServerPlayer)(Object)this), this.mobCapVisualTarget);
         }
     }
 
     @Override
-    public int getPlayerMobCap(SpawnGroup group) {
+    public int getPlayerMobCap(MobCategory group) {
         return this.caps.get(group);
     }
 
     @Override
-    public void addMob(SpawnGroup group) {
+    public void addMob(MobCategory group) {
         this.caps.merge(group, 1, Integer::sum);
     }
 
     @Override
-    public void removeMob(SpawnGroup group) {
+    public void removeMob(MobCategory group) {
         this.caps.merge(group, -1, (oldValue, value) -> Math.max(0, oldValue + value));
     }
 
@@ -70,22 +70,22 @@ public abstract class ServerPlayerEntityMixin implements MobCapTracker, VisualDe
     }
 
     @Override
-    public int adjustedMobCapMaxSize(SpawnGroup group) {
-        return (int) (group.getCapacity() * this.playerMobCapAdjustment);
+    public int adjustedMobCapMaxSize(MobCategory group) {
+        return (int) (group.getMaxInstancesPerChunk() * this.playerMobCapAdjustment);
     }
 
     @Override
-    public void toggleDebugMarker(ServerPlayerEntity input, ServerPlayerEntity watcher) {
+    public void toggleDebugMarker(ServerPlayer input, ServerPlayer watcher) {
         this.mobCapVisualTarget = input;
     }
 
     @Override
-    public boolean isDebugMarkerToggled(@Nullable ServerPlayerEntity player) {
+    public boolean isDebugMarkerToggled(@Nullable ServerPlayer player) {
         return this.mobCapVisualTarget != null;
     }
 
     @Override
-    public List<DataTracker.SerializedEntry<?>> setFakeGlow(boolean bool) {
+    public List<SynchedEntityData.DataValue<?>> setFakeGlow(boolean bool) {
         return null;
     }
 }

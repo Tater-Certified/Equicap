@@ -1,85 +1,84 @@
 package com.github.tatercertified.equicap;
 
 import com.github.tatercertified.equicap.interfaces.*;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.network.packet.s2c.play.EntityTrackerUpdateS2CPacket;
-import net.minecraft.scoreboard.Scoreboard;
-import net.minecraft.scoreboard.Team;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Formatting;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Scoreboard;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public final class PacketUtils {
-    private static final Map<SpawnGroup, Team> LOW_TEAMS = new EnumMap<>(SpawnGroup.class);
-    private static final Map<SpawnGroup, Team> HIGH_TEAMS = new EnumMap<>(SpawnGroup.class);
+    private static final Map<MobCategory, PlayerTeam> LOW_TEAMS = new EnumMap<>(MobCategory.class);
+    private static final Map<MobCategory, PlayerTeam> HIGH_TEAMS = new EnumMap<>(MobCategory.class);
 
     public static void init(MinecraftServer server) {
         Scoreboard scoreboard = server.getScoreboard();
 
-        setupTeam(scoreboard, SpawnGroup.MONSTER, Formatting.RED, Formatting.DARK_RED);
-        setupTeam(scoreboard, SpawnGroup.CREATURE, Formatting.GREEN, Formatting.DARK_GREEN);
-        setupTeam(scoreboard, SpawnGroup.AMBIENT, Formatting.GRAY, Formatting.DARK_GRAY);
-        setupTeam(scoreboard, SpawnGroup.AXOLOTLS, Formatting.LIGHT_PURPLE, Formatting.DARK_PURPLE);
-        setupTeam(scoreboard, SpawnGroup.UNDERGROUND_WATER_CREATURE, Formatting.BLUE, Formatting.DARK_BLUE);
-        setupTeam(scoreboard, SpawnGroup.WATER_CREATURE, Formatting.AQUA, Formatting.DARK_AQUA);
-        setupTeam(scoreboard, SpawnGroup.WATER_AMBIENT, Formatting.AQUA, Formatting.DARK_AQUA); // Re-use Aqua/Dark Aqua
-        setupTeam(scoreboard, SpawnGroup.MISC, Formatting.YELLOW, Formatting.GOLD);
+        setupTeam(scoreboard, MobCategory.MONSTER, ChatFormatting.RED, ChatFormatting.DARK_RED);
+        setupTeam(scoreboard, MobCategory.CREATURE, ChatFormatting.GREEN, ChatFormatting.DARK_GREEN);
+        setupTeam(scoreboard, MobCategory.AMBIENT, ChatFormatting.GRAY, ChatFormatting.DARK_GRAY);
+        setupTeam(scoreboard, MobCategory.AXOLOTLS, ChatFormatting.LIGHT_PURPLE, ChatFormatting.DARK_PURPLE);
+        setupTeam(scoreboard, MobCategory.UNDERGROUND_WATER_CREATURE, ChatFormatting.BLUE, ChatFormatting.DARK_BLUE);
+        setupTeam(scoreboard, MobCategory.WATER_CREATURE, ChatFormatting.AQUA, ChatFormatting.DARK_AQUA);
+        setupTeam(scoreboard, MobCategory.WATER_AMBIENT, ChatFormatting.AQUA, ChatFormatting.DARK_AQUA); // Re-use Aqua/Dark Aqua
+        setupTeam(scoreboard, MobCategory.MISC, ChatFormatting.YELLOW, ChatFormatting.GOLD);
     }
 
-    private static void setupTeam(Scoreboard scoreboard, SpawnGroup group, Formatting low, Formatting high) {
+    private static void setupTeam(Scoreboard scoreboard, MobCategory group, ChatFormatting low, ChatFormatting high) {
         String lowName = "equicap_" + group.getName() + "_l";
         String highName = "equicap_" + group.getName() + "_h";
 
-        Team lowTeam = scoreboard.getTeam(lowName);
-        if (lowTeam == null) lowTeam = scoreboard.addTeam(lowName);
+        PlayerTeam lowTeam = scoreboard.getPlayerTeam(lowName);
+        if (lowTeam == null) lowTeam = scoreboard.addPlayerTeam(lowName);
         lowTeam.setColor(low);
         LOW_TEAMS.put(group, lowTeam);
 
-        Team highTeam = scoreboard.getTeam(highName);
-        if (highTeam == null) highTeam = scoreboard.addTeam(highName);
+        PlayerTeam highTeam = scoreboard.getPlayerTeam(highName);
+        if (highTeam == null) highTeam = scoreboard.addPlayerTeam(highName);
         highTeam.setColor(high);
         HIGH_TEAMS.put(group, highTeam);
     }
 
-    public static void sendGlowPacket(ServerPlayerEntity player, MobEntity entity) {
-        String teamName = entity.getNameForScoreboard();
-        if (player.getEntityWorld().getScoreboard().getScoreHolderTeam(teamName) == null) {
-            Team team = LOW_TEAMS.getOrDefault(entity.getType().getSpawnGroup(), LOW_TEAMS.get(SpawnGroup.MISC));
+    public static void sendGlowPacket(ServerPlayer player, Mob entity) {
+        String teamName = entity.getScoreboardName();
+        if (player.level().getScoreboard().getPlayersTeam(teamName) == null) {
+            PlayerTeam team = LOW_TEAMS.getOrDefault(entity.getType().getCategory(), LOW_TEAMS.get(MobCategory.MISC));
             if (team != null) {
-                player.getEntityWorld().getScoreboard().addScoreHolderToTeam(teamName, team);
+                player.level().getScoreboard().addPlayerToTeam(teamName, team);
             }
         }
-        List<DataTracker.SerializedEntry<?>> entries = ((VisualDebug)entity).setFakeGlow(true);
-        player.networkHandler.sendPacket(new EntityTrackerUpdateS2CPacket(entity.getId(), entries));
+        List<SynchedEntityData.DataValue<?>> entries = ((VisualDebug)entity).setFakeGlow(true);
+        player.connection.send(new ClientboundSetEntityDataPacket(entity.getId(), entries));
     }
 
-    public static void removeGlowPacket(ServerPlayerEntity player, MobEntity entity) {
-        List<DataTracker.SerializedEntry<?>> entries = ((VisualDebug)entity).setFakeGlow(false);
-        player.networkHandler.sendPacket(new EntityTrackerUpdateS2CPacket(entity.getId(), entries));
+    public static void removeGlowPacket(ServerPlayer player, Mob entity) {
+        List<SynchedEntityData.DataValue<?>> entries = ((VisualDebug)entity).setFakeGlow(false);
+        player.connection.send(new ClientboundSetEntityDataPacket(entity.getId(), entries));
     }
 
-    public static void addNewEntitiesToDebugRenderer(ServerPlayerEntity watcher, ServerPlayerEntity input) {
+    public static void addNewEntitiesToDebugRenderer(ServerPlayer watcher, ServerPlayer input) {
         if (((VisualDebug)watcher).isDebugMarkerToggled(null)) {
-            ServerWorld world = watcher.getEntityWorld();
+            ServerLevel world = watcher.level();
             Scoreboard scoreboard = world.getScoreboard();
             
             MobCapTracker tracker = (MobCapTracker) input;
-            Map<SpawnGroup, Integer> currentCounts = new HashMap<>();
-            for (SpawnGroup group : SpawnGroup.values()) {
+            Map<MobCategory, Integer> currentCounts = new HashMap<>();
+            for (MobCategory group : MobCategory.values()) {
                 currentCounts.put(group, tracker.getPlayerMobCap(group));
             }
 
-            Map<SpawnGroup, Boolean> isHigh = new HashMap<>();
-            for (SpawnGroup group : SpawnGroup.values()) {
+            Map<MobCategory, Boolean> isHigh = new HashMap<>();
+            for (MobCategory group : MobCategory.values()) {
                 int cap = tracker.adjustedMobCapMaxSize(group);
                 if (cap > 0) {
                     float percent = (float) currentCounts.get(group) / cap;
@@ -89,9 +88,9 @@ public final class PacketUtils {
                 }
             }
 
-            for (Entity entity : ((EntityTransfer)world).getEntities()) {
-                if (entity instanceof MobEntity mob) {
-                    ServerPlayerEntity spawnedFrom = ((SpawnedFrom)mob).getSpawnedFrom();
+            for (Entity entity : ((EntityTransfer)world).equicap$getAllEntities()) {
+                if (entity instanceof Mob mob) {
+                    ServerPlayer spawnedFrom = ((SpawnedFrom)mob).getSpawnedFrom();
                     if (((SpawnedFrom)mob).shouldBeInCap() &&
                             (spawnedFrom == null || spawnedFrom.equals(input))) {
                         
@@ -99,16 +98,16 @@ public final class PacketUtils {
                             ((VisualDebug)mob).toggleDebugMarker(input, watcher);
                         }
                         
-                        SpawnGroup group = mob.getType().getSpawnGroup();
+                        MobCategory group = mob.getType().getCategory();
                         boolean high = isHigh.getOrDefault(group, false);
-                        Team team = high ? HIGH_TEAMS.get(group) : LOW_TEAMS.get(group);
+                        PlayerTeam team = high ? HIGH_TEAMS.get(group) : LOW_TEAMS.get(group);
 
                         if (team == null) {
-                            team = high ? HIGH_TEAMS.get(SpawnGroup.MISC) : LOW_TEAMS.get(SpawnGroup.MISC);
+                            team = high ? HIGH_TEAMS.get(MobCategory.MISC) : LOW_TEAMS.get(MobCategory.MISC);
                         }
 
                         if (team != null) {
-                            scoreboard.addScoreHolderToTeam(entity.getNameForScoreboard(), team);
+                            scoreboard.addPlayerToTeam(entity.getScoreboardName(), team);
                         }
                     }
                 }
