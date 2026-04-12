@@ -1,30 +1,30 @@
 package com.github.tatercertified.equicap.spawn_area;
 
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 public class DynamicSpawnArea {
-    private final Random random;
+    private final RandomSource random;
 
     private int minRadius = 24;
     private int maxRadius = 128;
     private int minHeight = 24;
     private int maxHeight = 128;
 
-    private BlockPos offset = BlockPos.ORIGIN;
+    private BlockPos offset = BlockPos.ZERO;
     private SpawnShape shape = SpawnShape.SPHERE;
 
     /**
      * Creates the framework for getting positions within a DynamicSpawnArea
      * @param random Random instance from the World
      */
-    public DynamicSpawnArea(Random random) {
+    public DynamicSpawnArea(RandomSource random) {
         this.random = random;
     }
 
@@ -83,8 +83,8 @@ public class DynamicSpawnArea {
      * @param playerPos The player's position
      * @return A mutable instance of the center position of the spawn area
      */
-    public BlockPos.Mutable getCenterPosition(BlockPos playerPos) {
-        return new BlockPos.Mutable(playerPos.getX() + offset.getX(),
+    public BlockPos.MutableBlockPos getCenterPosition(BlockPos playerPos) {
+        return new BlockPos.MutableBlockPos(playerPos.getX() + offset.getX(),
                 playerPos.getY() + offset.getY(),
                 playerPos.getZ() + offset.getZ());
     }
@@ -94,47 +94,93 @@ public class DynamicSpawnArea {
      * @param playerPos The player's position
      * @param world ServerWorld instance
      */
-    public WorldChunk getRandomChunk(BlockPos playerPos, ServerWorld world) {
+    public LevelChunk getRandomChunk(BlockPos playerPos, ServerLevel world) {
         BlockPos center = this.getCenterPosition(playerPos);
         return switch (shape) {
+            case SPHERE -> sampleSphere(center, world);
             case CYLINDER -> sampleCylinder(center, world);
             case CUBE -> sampleCube(center, world);
         };
     }
 
-    private WorldChunk posToChunk(ServerWorld world, int x, int z) {
+    private LevelChunk posToChunk(ServerLevel world, int x, int z) {
         int chunkX = x >> 4;
         int chunkZ = z >> 4;
 
         return world.getChunk(chunkX, chunkZ);
     }
 
-    private WorldChunk sampleCylinder(BlockPos center, ServerWorld world) {
-        float angle = random.nextFloat() * MathHelper.TAU;
-        int distance = random.nextBetween(minRadius, maxRadius + 1) * (random.nextBoolean() ? -1 : 1);
+    private LevelChunk sampleCylinder(BlockPos center, ServerLevel world) {
+        float angle = random.nextFloat() * Mth.TWO_PI;
+        int distance = random.nextIntBetweenInclusive(minRadius, maxRadius + 1) * (random.nextBoolean() ? -1 : 1);
         //int height = random.nextBetween(minHeight, maxHeight + 1) * (random.nextBoolean() ? -1 : 1);
-        return posToChunk(world, (int) (MathHelper.cos(angle) * distance) + center.getX(), (int) (MathHelper.sin(angle) * distance) + center.getZ());
+        return posToChunk(world, (int) (Mth.cos(angle) * distance) + center.getX(), (int) (Mth.sin(angle) * distance) + center.getZ());
     }
 
-    private WorldChunk sampleCube(BlockPos center, ServerWorld world) {
+    private LevelChunk sampleSphere(BlockPos center, ServerLevel world) {
+        float angle = random.nextFloat() * Mth.TWO_PI;
+        int distance = random.nextIntBetweenInclusive(minRadius, maxRadius + 1) * (random.nextBoolean() ? -1 : 1);
+        return posToChunk(world, (int) (Mth.cos(angle) * distance) + center.getX(), (int) (Mth.sin(angle) * distance) + center.getZ());
+    }
+
+    private LevelChunk sampleCube(BlockPos center, ServerLevel world) {
         return posToChunk(world,
-                center.getX() + random.nextBetween(minRadius, maxRadius + 1) * (random.nextBoolean() ? -1 : 1),
-                center.getZ() + random.nextBetween(minRadius, maxRadius + 1) * (random.nextBoolean() ? -1 : 1)
+                center.getX() + random.nextIntBetweenInclusive(minRadius, maxRadius + 1) * (random.nextBoolean() ? -1 : 1),
+                center.getZ() + random.nextIntBetweenInclusive(minRadius, maxRadius + 1) * (random.nextBoolean() ? -1 : 1)
         );
     }
 
-    public BlockPos getRandomPosInChunkSection(World world, WorldChunk chunk, int playerY) {
+    public BlockPos getRandomPosInChunkSection(Level world, LevelChunk chunk, int playerY) {
         // TODO This is an absolute mess
         return switch (this.shape) {
-            case CUBE -> {
+            case CUBE, CYLINDER -> {
                 ChunkPos chunkPos = chunk.getPos();
-                int x = chunkPos.getStartX() + world.random.nextInt(16);
-                int z = chunkPos.getStartZ() + world.random.nextInt(16);
-                int max = MathHelper.clamp(chunk.sampleHeightmap(Heightmap.Type.WORLD_SURFACE, x, z) + 1, playerY - maxHeight, playerY + maxHeight);
-                int l = MathHelper.nextBetween(world.random, world.getBottomY(), k);
+                int x = chunkPos.getMinBlockX() + world.getRandom().nextInt(16);
+                int z = chunkPos.getMinBlockZ() + world.getRandom().nextInt(16);
+                int surfaceY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1;
+                int minAllowedY = Math.max(world.getMinY(), playerY - maxHeight);
+                int maxAllowedY = Math.min(surfaceY, playerY + maxHeight);
+                if (maxAllowedY < minAllowedY) {
+                    maxAllowedY = minAllowedY;
+                }
+
+                int lowerMin = minAllowedY;
+                int lowerMax = Math.min(maxAllowedY, playerY - minHeight);
+                int upperMin = Math.max(minAllowedY, playerY + minHeight);
+                int upperMax = maxAllowedY;
+
+                int l;
+                boolean hasLower = lowerMax >= lowerMin;
+                boolean hasUpper = upperMax >= upperMin;
+                if (hasLower && hasUpper) {
+                    int lowerSize = lowerMax - lowerMin + 1;
+                    int upperSize = upperMax - upperMin + 1;
+                    if (world.getRandom().nextInt(lowerSize + upperSize) < lowerSize) {
+                        l = Mth.randomBetweenInclusive(world.getRandom(), lowerMin, lowerMax);
+                    } else {
+                        l = Mth.randomBetweenInclusive(world.getRandom(), upperMin, upperMax);
+                    }
+                } else if (hasLower) {
+                    l = Mth.randomBetweenInclusive(world.getRandom(), lowerMin, lowerMax);
+                } else if (hasUpper) {
+                    l = Mth.randomBetweenInclusive(world.getRandom(), upperMin, upperMax);
+                } else {
+                    l = Mth.randomBetweenInclusive(world.getRandom(), minAllowedY, maxAllowedY);
+                }
                 yield new BlockPos(x, l, z);
             }
-            case CYLINDER -> {
+            case SPHERE -> {
+                ChunkPos chunkPos = chunk.getPos();
+                int x = chunkPos.getMinBlockX() + world.getRandom().nextInt(16);
+                int z = chunkPos.getMinBlockZ() + world.getRandom().nextInt(16);
+                int surfaceY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1;
+                int minAllowedY = Math.max(world.getMinY(), playerY - maxRadius);
+                int maxAllowedY = Math.min(surfaceY, playerY + maxRadius);
+                if (maxAllowedY < minAllowedY) {
+                    maxAllowedY = minAllowedY;
+                }
+                int l = Mth.randomBetweenInclusive(world.getRandom(), minAllowedY, maxAllowedY);
+                yield new BlockPos(x, l, z);
             }
         };
     }

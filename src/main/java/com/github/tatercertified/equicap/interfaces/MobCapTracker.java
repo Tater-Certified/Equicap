@@ -1,25 +1,24 @@
 package com.github.tatercertified.equicap.interfaces;
 
-import net.minecraft.entity.SpawnGroup;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.MobCategory;
 import java.util.EnumMap;
 import java.util.Map;
 
 public interface MobCapTracker {
-    int getPlayerMobCap(SpawnGroup group);
-    void addMob(SpawnGroup group);
-    void removeMob(SpawnGroup group);
-    default boolean canSpawn(SpawnGroup group) {
+    int getPlayerMobCap(MobCategory group);
+    void addMob(MobCategory group);
+    void removeMob(MobCategory group);
+    default boolean canSpawn(MobCategory group) {
         return this.getPlayerMobCap(group) < this.adjustedMobCapMaxSize(group);
     }
-    int adjustedMobCapMaxSize(SpawnGroup group);
+    int adjustedMobCapMaxSize(MobCategory group);
     void adjustMobCapBy(float percent);
-    default EnumMap<SpawnGroup, int[]> getPlayerMobCapData() {
-        EnumMap<SpawnGroup, int[]> count = new EnumMap<>(SpawnGroup.class);
-        for (SpawnGroup group : SpawnGroup.values()) {
+    default EnumMap<MobCategory, int[]> getPlayerMobCapData() {
+        EnumMap<MobCategory, int[]> count = new EnumMap<>(MobCategory.class);
+        for (MobCategory group : MobCategory.values()) {
             int cap = this.getPlayerMobCap(group);
             int total = this.adjustedMobCapMaxSize(group);
             int[] existing = count.get(group);
@@ -33,10 +32,10 @@ public interface MobCapTracker {
         }
         return count;
     }
-    static EnumMap<SpawnGroup, int[]> getDimensionMobCount(ServerWorld world) {
-        EnumMap<SpawnGroup, int[]> count = new EnumMap<>(SpawnGroup.class);
-        for (ServerPlayerEntity player : world.getPlayers()) {
-            for (SpawnGroup group : SpawnGroup.values()) {
+    static EnumMap<MobCategory, int[]> getDimensionMobCount(ServerLevel world) {
+        EnumMap<MobCategory, int[]> count = new EnumMap<>(MobCategory.class);
+        for (ServerPlayer player : world.players()) {
+            for (MobCategory group : MobCategory.values()) {
                 int cap = ((MobCapTracker)player).getPlayerMobCap(group);
                 int total = ((MobCapTracker)player).adjustedMobCapMaxSize(group);
                 int[] existing = count.get(group);
@@ -51,12 +50,12 @@ public interface MobCapTracker {
         }
         return count;
     }
-    static EnumMap<SpawnGroup, int[]> getTotalMobCount(MinecraftServer server) {
-        EnumMap<SpawnGroup, int[]> count = new EnumMap<>(SpawnGroup.class);
-        for (ServerWorld world : server.getWorlds()) {
-            EnumMap<SpawnGroup, int[]> worldCount = getDimensionMobCount(world);
+    static EnumMap<MobCategory, int[]> getTotalMobCount(MinecraftServer server) {
+        EnumMap<MobCategory, int[]> count = new EnumMap<>(MobCategory.class);
+        for (ServerLevel world : server.getAllLevels()) {
+            EnumMap<MobCategory, int[]> worldCount = getDimensionMobCount(world);
 
-            for (Map.Entry<SpawnGroup, int[]> entry : worldCount.entrySet()) {
+            for (Map.Entry<MobCategory, int[]> entry : worldCount.entrySet()) {
                 int[] existing = count.get(entry.getKey());
                 if (existing == null) {
                     existing = entry.getValue();

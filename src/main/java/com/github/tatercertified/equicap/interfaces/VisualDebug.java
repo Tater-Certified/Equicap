@@ -1,27 +1,26 @@
 package com.github.tatercertified.equicap.interfaces;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-
 import java.util.List;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
 
 public interface VisualDebug {
-    void toggleDebugMarker(ServerPlayerEntity input, ServerPlayerEntity watcher);
-    boolean isDebugMarkerToggled(ServerPlayerEntity watcher);
-    static void removeWatcher(ServerPlayerEntity watcher) {
+    void toggleDebugMarker(ServerPlayer input, ServerPlayer watcher);
+    boolean isDebugMarkerToggled(ServerPlayer watcher);
+    static void removeWatcher(ServerPlayer watcher) {
         if (((VisualDebug)watcher).isDebugMarkerToggled(null)) {
-            ServerWorld world = watcher.getEntityWorld();
-            for (Entity entity : ((EntityTransfer)world).getEntities()) {
-                if (entity instanceof MobEntity mob && ((VisualDebug)mob).isDebugMarkerToggled(watcher)) {
+            ServerLevel world = watcher.level();
+        for (Entity entity : ((EntityTransfer)world).equicap$getAllEntities()) {
+                if (entity instanceof Mob mob && ((VisualDebug)mob).isDebugMarkerToggled(watcher)) {
                     ((VisualDebug)mob).toggleDebugMarker(null, watcher);
                 }
             }
             ((VisualDebug)watcher).toggleDebugMarker(null, null);
         }
     }
-    List<DataTracker.SerializedEntry<?>> setFakeGlow(boolean bool);
+    List<SynchedEntityData.DataValue<?>> setFakeGlow(boolean bool);
 
 }

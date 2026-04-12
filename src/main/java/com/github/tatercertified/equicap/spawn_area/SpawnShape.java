@@ -1,7 +1,7 @@
 package com.github.tatercertified.equicap.spawn_area;
 
 public enum SpawnShape {
-    //SPHERE,
+    SPHERE,
     CUBE,
     CYLINDER;
 }

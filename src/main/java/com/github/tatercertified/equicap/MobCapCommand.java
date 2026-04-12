@@ -9,22 +9,20 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.command.argument.DimensionArgumentType;
-import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.command.permission.PermissionLevel;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.scoreboard.Team;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.DimensionArgument;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.scores.PlayerTeam;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -32,68 +30,68 @@ import java.util.*;
 public class MobCapCommand {
     public static void registerCommand() {
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated, environment) ->
-                dispatcher.register(CommandManager.literal("equicap")
-                        .requires(Permissions.require("equicap.command", PermissionLevel.ADMINS))
-                        .then(CommandManager.literal("set")
-                                .then(CommandManager.argument("group", StringArgumentType.string())
+                dispatcher.register(Commands.literal("equicap")
+                        .requires(Commands.hasPermission(Commands.LEVEL_ADMINS))
+                        .then(Commands.literal("set")
+                                .then(Commands.argument("group", StringArgumentType.string())
                                         .suggests(SPAWN_GROUP_SUGGESTIONS)
-                                        .then(CommandManager.argument("size", IntegerArgumentType.integer(0))
+                                        .then(Commands.argument("size", IntegerArgumentType.integer(0))
                                                 .executes(context -> {
-                                                    SpawnGroup group = getSpawnGroup(context);
+                                                    MobCategory group = getSpawnGroup(context);
                                                     int size = IntegerArgumentType.getInteger(context, "size");
 
                                                     ((MobCapAccess)(Object)group).setMobCapSize(size);
                                                     Config.getInstance().spawnGroupCapacityOverrides.put(group, size);
                                                     Config.getInstance().saveConfig();
-                                                    context.getSource().sendFeedback(() -> Text.of("Set " + group.getName() + " per-player mob cap to " + size), true);
+                                                    context.getSource().sendSuccess(() -> Component.nullToEmpty("Set " + group.getName() + " per-player mob cap to " + size), true);
                                                     return 1;
                                                 })
                                         )
                                 )
                         )
-                        .then(CommandManager.literal("get")
-                                .then(CommandManager.argument("group", StringArgumentType.string())
+                        .then(Commands.literal("get")
+                                .then(Commands.argument("group", StringArgumentType.string())
                                         .suggests(SPAWN_GROUP_SUGGESTIONS)
                                         .executes(context -> {
-                                            SpawnGroup group = getSpawnGroup(context);
-                                            context.getSource().sendFeedback(() -> Text.of(group.getName() + " per-player mob cap total is " + group.getCapacity()), false);
+                                            MobCategory group = getSpawnGroup(context);
+                                            context.getSource().sendSuccess(() -> Component.nullToEmpty(group.getName() + " per-player mob cap total is " + group.getMaxInstancesPerChunk()), false);
                                             return 1;
                                         })
                                 )
                         )
-                        .then(CommandManager.literal("merge")
+                        .then(Commands.literal("merge")
                                 .executes(context -> {
-                                    context.getSource().sendFeedback(() -> Text.of("The current merge mode is " + Config.getInstance().mergeMode.getName()), false);
+                                    context.getSource().sendSuccess(() -> Component.nullToEmpty("The current merge mode is " + Config.getInstance().mergeMode.getName()), false);
                                     return 1;
                                 })
-                                .then(CommandManager.argument("mode", StringArgumentType.string())
+                                .then(Commands.argument("mode", StringArgumentType.string())
                                         .suggests(MERGE_MODE_SUGGESTIONS)
                                         .executes(context -> {
                                             MobCapMerge merge = getMergeMode(context);
                                             Config.getInstance().mergeMode = merge;
                                             Config.getInstance().saveConfig();
-                                            context.getSource().sendFeedback(() -> Text.of("Set merge mode to " + merge.name()), true);
+                                            context.getSource().sendSuccess(() -> Component.nullToEmpty("Set merge mode to " + merge.name()), true);
                                             return 1;
                                         })
                                 )
                         )
-                        .then(CommandManager.literal("debug")
-                                .then(CommandManager.literal("player")
+                        .then(Commands.literal("debug")
+                                .then(Commands.literal("player")
                                         .executes(context -> {
-                                            MutableText text = getPrintOut(null, context);
+                                            MutableComponent text = getPrintOut(null, context);
                                             if (text != null) {
-                                                context.getSource().sendFeedback(() -> text, false);
+                                                context.getSource().sendSuccess(() -> text, false);
                                                 return 1;
                                             } else {
                                                 return 0;
                                             }
                                         })
-                                        .then(CommandManager.argument("target", EntityArgumentType.player())
+                                        .then(Commands.argument("target", EntityArgument.player())
                                                 .executes(context -> {
-                                                    ServerPlayerEntity target = EntityArgumentType.getPlayer(context, "target");
-                                                    MutableText text = getPrintOut(((MobCapTracker)target).getPlayerMobCapData(), context);
+                                                    ServerPlayer target = EntityArgument.getPlayer(context, "target");
+                                                    MutableComponent text = getPrintOut(((MobCapTracker)target).getPlayerMobCapData(), context);
                                                     if (text != null) {
-                                                        context.getSource().sendFeedback(() -> text, false);
+                                                        context.getSource().sendSuccess(() -> text, false);
                                                         return 1;
                                                     } else {
                                                         return 0;
@@ -101,49 +99,49 @@ public class MobCapCommand {
                                                 })
                                         )
                                 )
-                                .then(CommandManager.literal("check")
-                                        .then(CommandManager.argument("target", EntityArgumentType.entity())
+                                .then(Commands.literal("check")
+                                        .then(Commands.argument("target", EntityArgument.entity())
                                                 .executes(context -> {
-                                                    Entity entity = EntityArgumentType.getEntity(context, "target");
-                                                    if (entity instanceof MobEntity mob) {
-                                                        MutableText text = Text.literal("Debug info for " + entity.getName().getString() + ":\n");
-                                                        text.append("UUID: " + entity.getUuidAsString() + "\n");
-                                                        text.append("Group: " + mob.getType().getSpawnGroup().getName() + "\n");
-                                                        text.append("Persistent: " + mob.isPersistent() + "\n");
-                                                        text.append("Cannot Despawn: " + mob.cannotDespawn() + "\n");
+                                                    Entity entity = EntityArgument.getEntity(context, "target");
+                                                    if (entity instanceof Mob mob) {
+                                                        MutableComponent text = Component.literal("Debug info for " + entity.getName().getString() + ":\n");
+                                                        text.append("UUID: " + entity.getStringUUID() + "\n");
+                                                        text.append("Group: " + mob.getType().getCategory().getName() + "\n");
+                                                        text.append("Persistent: " + mob.isPersistenceRequired() + "\n");
+                                                        text.append("Cannot Despawn: " + mob.requiresCustomPersistence() + "\n");
                                                         text.append("Should Track: " + ((SpawnedFrom)mob).shouldBeInCap() + "\n");
-                                                        ServerPlayerEntity owner = ((SpawnedFrom)mob).getSpawnedFrom();
+                                                        ServerPlayer owner = ((SpawnedFrom)mob).getSpawnedFrom();
                                                         text.append("Spawned From: " + (owner != null ? owner.getName().getString() : "null") + "\n");
                                                         
-                                                        Team team = context.getSource().getServer().getScoreboard().getScoreHolderTeam(entity.getNameForScoreboard());
+                                                        PlayerTeam team = context.getSource().getServer().getScoreboard().getPlayersTeam(entity.getScoreboardName());
                                                         text.append("Team: " + (team != null ? team.getName() : "null") + "\n");
                                                         
                                                         text.append("Watched by you: " + ((VisualDebug)mob).isDebugMarkerToggled(context.getSource().getPlayer()));
                                                         
-                                                        context.getSource().sendFeedback(() -> text, false);
+                                                        context.getSource().sendSuccess(() -> text, false);
                                                     } else {
-                                                        context.getSource().sendError(Text.of("Target is not a mob"));
+                                                        context.getSource().sendFailure(Component.nullToEmpty("Target is not a mob"));
                                                     }
                                                     return 1;
                                                 })
                                         )
                                 )
-                                .then(CommandManager.literal("dimension")
+                                .then(Commands.literal("dimension")
                                         .executes(context -> {
-                                            MutableText text = getPrintOut(MobCapTracker.getDimensionMobCount(context.getSource().getWorld()), context);
+                                            MutableComponent text = getPrintOut(MobCapTracker.getDimensionMobCount(context.getSource().getLevel()), context);
                                             if (text != null) {
-                                                context.getSource().sendFeedback(() -> text, false);
+                                                context.getSource().sendSuccess(() -> text, false);
                                                 return 1;
                                             } else {
                                                 return 0;
                                             }
                                         })
-                                        .then(CommandManager.argument("dimension", DimensionArgumentType.dimension())
+                                        .then(Commands.argument("dimension", DimensionArgument.dimension())
                                                 .executes(context -> {
-                                                    ServerWorld world = DimensionArgumentType.getDimensionArgument(context, "dimension");
-                                                    MutableText text = getPrintOut(MobCapTracker.getDimensionMobCount(world), context);
+                                                    ServerLevel world = DimensionArgument.getDimension(context, "dimension");
+                                                    MutableComponent text = getPrintOut(MobCapTracker.getDimensionMobCount(world), context);
                                                     if (text != null) {
-                                                        context.getSource().sendFeedback(() -> text, false);
+                                                        context.getSource().sendSuccess(() -> text, false);
                                                         return 1;
                                                     } else {
                                                         return 0;
@@ -151,43 +149,43 @@ public class MobCapCommand {
                                                 })
                                         )
                                 )
-                                .then(CommandManager.literal("global")
+                                .then(Commands.literal("global")
                                         .executes(context -> {
-                                            MutableText text = getPrintOut(MobCapTracker.getTotalMobCount(context.getSource().getServer()), context);
+                                            MutableComponent text = getPrintOut(MobCapTracker.getTotalMobCount(context.getSource().getServer()), context);
                                             if (text != null) {
-                                                context.getSource().sendFeedback(() -> text, false);
+                                                context.getSource().sendSuccess(() -> text, false);
                                                 return 1;
                                             } else {
                                                 return 0;
                                             }
                                         })
                                 )
-                                .then(CommandManager.literal("visual")
+                                .then(Commands.literal("visual")
                                         .executes(context -> {
-                                            ServerPlayerEntity player = context.getSource().getPlayer();
+                                            ServerPlayer player = context.getSource().getPlayer();
                                             if (((VisualDebug)player).isDebugMarkerToggled(null)) {
                                                 VisualDebug.removeWatcher(player);
-                                                context.getSource().sendFeedback(() -> Text.of("Disabled visual debug"), false);
+                                                context.getSource().sendSuccess(() -> Component.nullToEmpty("Disabled visual debug"), false);
                                             } else {
                                                 ((VisualDebug)player).toggleDebugMarker(player, null);
                                                 PacketUtils.addNewEntitiesToDebugRenderer(player, player);
-                                                MutableText msg = Text.literal("Enabled visual debug for self. Colors: ");
-                                                msg.append(Text.literal("Monster").formatted(Formatting.RED)).append(", ");
-                                                msg.append(Text.literal("Creature").formatted(Formatting.GREEN)).append(", ");
-                                                msg.append(Text.literal("Ambient").formatted(Formatting.GRAY)).append(", ");
-                                                msg.append(Text.literal("Axolotls").formatted(Formatting.LIGHT_PURPLE)).append(", ");
-                                                msg.append(Text.literal("U.Water").formatted(Formatting.BLUE)).append(", ");
-                                                msg.append(Text.literal("Water").formatted(Formatting.AQUA)).append(", ");
-                                                msg.append(Text.literal("Misc").formatted(Formatting.YELLOW));
-                                                msg.append(Text.literal("\n(Darker colors indicate >75% cap usage)"));
-                                                context.getSource().sendFeedback(() -> msg, false);
+                                                MutableComponent msg = Component.literal("Enabled visual debug for self. Colors: ");
+                                                msg.append(Component.literal("Monster").withStyle(ChatFormatting.RED)).append(", ");
+                                                msg.append(Component.literal("Creature").withStyle(ChatFormatting.GREEN)).append(", ");
+                                                msg.append(Component.literal("Ambient").withStyle(ChatFormatting.GRAY)).append(", ");
+                                                msg.append(Component.literal("Axolotls").withStyle(ChatFormatting.LIGHT_PURPLE)).append(", ");
+                                                msg.append(Component.literal("U.Water").withStyle(ChatFormatting.BLUE)).append(", ");
+                                                msg.append(Component.literal("Water").withStyle(ChatFormatting.AQUA)).append(", ");
+                                                msg.append(Component.literal("Misc").withStyle(ChatFormatting.YELLOW));
+                                                msg.append(Component.literal("\n(Darker colors indicate >75% cap usage)"));
+                                                context.getSource().sendSuccess(() -> msg, false);
                                             }
                                             return 1;
                                         })
-                                        .then(CommandManager.argument("player", EntityArgumentType.entities())
+                                        .then(Commands.argument("player", EntityArgument.entities())
                                                 .executes(context -> {
                                                     VisualDebug.removeWatcher(context.getSource().getPlayer());
-                                                    ServerPlayerEntity input = EntityArgumentType.getPlayer(context, "player");
+                                                    ServerPlayer input = EntityArgument.getPlayer(context, "player");
                                                     ((VisualDebug)context.getSource().getPlayer()).toggleDebugMarker(input, null);
                                                     PacketUtils.addNewEntitiesToDebugRenderer(context.getSource().getPlayer(), input);
                                                     return 1;
@@ -195,9 +193,9 @@ public class MobCapCommand {
                                         )
                                 )
                         )
-                        .then(CommandManager.literal("help")
+                        .then(Commands.literal("help")
                                 .executes(context -> {
-                                    context.getSource().sendFeedback(() -> Text.of(
+                                    context.getSource().sendSuccess(() -> Component.nullToEmpty(
                                             """
                                                     Welcome to EquiCap, a per-player mob cap solution
                                                     Command Usage:
@@ -221,29 +219,29 @@ public class MobCapCommand {
         );
     }
 
-    private static final SuggestionProvider<ServerCommandSource> SPAWN_GROUP_SUGGESTIONS = (context, builder) -> {
-        for (SpawnGroup group : SpawnGroup.values()) {
+    private static final SuggestionProvider<CommandSourceStack> SPAWN_GROUP_SUGGESTIONS = (context, builder) -> {
+        for (MobCategory group : MobCategory.values()) {
             builder.suggest(group.getName());
         }
         return builder.buildFuture();
     };
 
-    private static final SuggestionProvider<ServerCommandSource> MERGE_MODE_SUGGESTIONS = (context, builder) -> {
+    private static final SuggestionProvider<CommandSourceStack> MERGE_MODE_SUGGESTIONS = (context, builder) -> {
         for (MobCapMerge merge : MobCapMerge.values()) {
             builder.suggest(merge.getName());
         }
         return builder.buildFuture();
     };
 
-    private static SpawnGroup getSpawnGroup(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static MobCategory getSpawnGroup(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         String input = StringArgumentType.getString(context, "group");
-        return Arrays.stream(SpawnGroup.values())
+        return Arrays.stream(MobCategory.values())
                 .filter(g -> g.getName().equals(input))
                 .findFirst()
                 .orElseThrow(() -> CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().create("Invalid group: " + input));
     }
 
-    private static MobCapMerge getMergeMode(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static MobCapMerge getMergeMode(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         String input = StringArgumentType.getString(context, "mode");
         return Arrays.stream(MobCapMerge.values())
                 .filter(g -> g.getName().equals(input))
@@ -252,38 +250,38 @@ public class MobCapCommand {
     }
 
     @Nullable
-    private static MutableText getPrintOut(@Nullable EnumMap<SpawnGroup, int[]> data, CommandContext<ServerCommandSource> context) {
-        if (context.getSource().isExecutedByPlayer()) {
-            ServerPlayerEntity player = context.getSource().getPlayer();
-            MutableText text = Text.empty();
+    private static MutableComponent getPrintOut(@Nullable EnumMap<MobCategory, int[]> data, CommandContext<CommandSourceStack> context) {
+        if (context.getSource().isPlayer()) {
+            ServerPlayer player = context.getSource().getPlayer();
+            MutableComponent text = Component.empty();
             boolean first = true;
             if (data == null) {
                 data = ((MobCapTracker)player).getPlayerMobCapData();
             }
 
             if (data.isEmpty()) {
-                text.append(Text.literal("There are no mobs in this scope").formatted(Formatting.RED));
+                text.append(Component.literal("There are no mobs in this scope").withStyle(ChatFormatting.RED));
                 return text;
             }
 
-            for (Map.Entry<SpawnGroup, int[]> entry : data.entrySet()) {
-                SpawnGroup group = entry.getKey();
+            for (Map.Entry<MobCategory, int[]> entry : data.entrySet()) {
+                MobCategory group = entry.getKey();
 
-                if (group == SpawnGroup.MISC) {
+                if (group == MobCategory.MISC) {
                     continue;
                 }
 
                 int current = entry.getValue()[0];
                 int total = entry.getValue()[1];
-                Formatting color;
+                ChatFormatting color;
                 float percent = (float) current / total;
 
                 if (percent >= 1.0) {
-                    color = Formatting.RED;
+                    color = ChatFormatting.RED;
                 } else if (percent > 0.75) {
-                    color = Formatting.YELLOW;
+                    color = ChatFormatting.YELLOW;
                 } else {
-                    color = Formatting.GREEN;
+                    color = ChatFormatting.GREEN;
                 }
 
                 if (first) {
@@ -292,11 +290,11 @@ public class MobCapCommand {
                     text.append("\n");
                 }
 
-                text.append(Text.literal(group.asString() + ": ")).append(Text.literal(current + "/" + total).formatted(color));
+                text.append(Component.literal(group.getSerializedName() + ": ")).append(Component.literal(current + "/" + total).withStyle(color));
             }
             return text;
         } else {
-            context.getSource().sendError(Text.of("This command must be executed by a player"));
+            context.getSource().sendFailure(Component.nullToEmpty("This command must be executed by a player"));
             return null;
         }
     }

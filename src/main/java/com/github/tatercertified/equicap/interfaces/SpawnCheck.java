@@ -1,9 +1,9 @@
 package com.github.tatercertified.equicap.interfaces;
 
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.level.ChunkPos;
 
 public interface SpawnCheck {
-    ServerPlayerEntity getSpawnFrom(SpawnGroup spawnGroup, ChunkPos chunkPos);
+    ServerPlayer getSpawnFrom(MobCategory spawnGroup, ChunkPos chunkPos);
 }

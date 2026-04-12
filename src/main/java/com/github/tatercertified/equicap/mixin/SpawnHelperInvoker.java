@@ -1,52 +1,52 @@
 package com.github.tatercertified.equicap.mixin;
 
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.SpawnHelper;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.SpawnSettings;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.gen.StructureAccessor;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.NaturalSpawner;
+import net.minecraft.world.level.StructureManager;
+import net.minecraft.world.level.biome.MobSpawnSettings;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.LevelChunk;
 
-@Mixin(SpawnHelper.class)
+@Mixin(NaturalSpawner.class)
 public interface SpawnHelperInvoker {
-    @Invoker("isAcceptableSpawnPosition")
-    static boolean isAcceptableSpawnPosition(ServerWorld world, Chunk chunk, BlockPos.Mutable pos, double squaredDistance) {
+    @Invoker("isRightDistanceToPlayerAndSpawnPoint")
+    static boolean isAcceptableSpawnPosition(ServerLevel world, ChunkAccess chunk, BlockPos.MutableBlockPos pos, double squaredDistance) {
         throw new AssertionError();
     }
 
-    @Invoker("pickRandomSpawnEntry")
-    static Optional<SpawnSettings.SpawnEntry> pickRandomSpawnEntry(ServerWorld world, StructureAccessor structureAccessor, ChunkGenerator chunkGenerator, SpawnGroup spawnGroup, Random random, BlockPos pos) {
+    @Invoker("getRandomSpawnMobAt")
+    static Optional<MobSpawnSettings.SpawnerData> pickRandomSpawnEntry(ServerLevel world, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobCategory spawnGroup, RandomSource random, BlockPos pos) {
         throw new AssertionError();
     }
 
-    @Invoker("canSpawn")
-    static boolean canSpawn(ServerWorld world, SpawnGroup group, StructureAccessor structureAccessor, ChunkGenerator chunkGenerator, SpawnSettings.SpawnEntry spawnEntry, BlockPos.Mutable pos, double squaredDistance) {
+    @Invoker("isValidSpawnPostitionForType")
+    static boolean canSpawn(ServerLevel world, MobCategory group, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) {
         throw new AssertionError();
     }
 
-    @Invoker("createMob")
-    static MobEntity createMob(ServerWorld world, EntityType<?> type) {
+    @Invoker("getMobForSpawn")
+    static Mob createMob(ServerLevel world, EntityType<?> type) {
         throw new AssertionError();
     }
 
-    @Invoker("isValidSpawn")
-    static boolean isValidSpawn(ServerWorld world, MobEntity entity, double squaredDistance) {
+    @Invoker("isValidPositionForMob")
+    static boolean isValidSpawn(ServerLevel world, Mob entity, double squaredDistance) {
         throw new AssertionError();
     }
 
-    @Invoker("getRandomPosInChunkSection")
-    static BlockPos getRandomPosInChunkSection(World world, WorldChunk chunk) {
+    @Invoker("getRandomPosWithin")
+    static BlockPos getRandomPosInChunkSection(Level world, LevelChunk chunk) {
         throw new AssertionError();
     }
 }
