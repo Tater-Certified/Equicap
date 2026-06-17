@@ -1,7 +1,6 @@
 package com.github.tatercertified.equicap;
 
 import com.github.tatercertified.equicap.interfaces.*;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
@@ -12,10 +11,9 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import net.minecraft.world.scores.TeamColor;
+
+import java.util.*;
 
 public final class PacketUtils {
     private static final Map<MobCategory, PlayerTeam> LOW_TEAMS = new EnumMap<>(MobCategory.class);
@@ -24,28 +22,28 @@ public final class PacketUtils {
     public static void init(MinecraftServer server) {
         Scoreboard scoreboard = server.getScoreboard();
 
-        setupTeam(scoreboard, MobCategory.MONSTER, ChatFormatting.RED, ChatFormatting.DARK_RED);
-        setupTeam(scoreboard, MobCategory.CREATURE, ChatFormatting.GREEN, ChatFormatting.DARK_GREEN);
-        setupTeam(scoreboard, MobCategory.AMBIENT, ChatFormatting.GRAY, ChatFormatting.DARK_GRAY);
-        setupTeam(scoreboard, MobCategory.AXOLOTLS, ChatFormatting.LIGHT_PURPLE, ChatFormatting.DARK_PURPLE);
-        setupTeam(scoreboard, MobCategory.UNDERGROUND_WATER_CREATURE, ChatFormatting.BLUE, ChatFormatting.DARK_BLUE);
-        setupTeam(scoreboard, MobCategory.WATER_CREATURE, ChatFormatting.AQUA, ChatFormatting.DARK_AQUA);
-        setupTeam(scoreboard, MobCategory.WATER_AMBIENT, ChatFormatting.AQUA, ChatFormatting.DARK_AQUA); // Re-use Aqua/Dark Aqua
-        setupTeam(scoreboard, MobCategory.MISC, ChatFormatting.YELLOW, ChatFormatting.GOLD);
+        setupTeam(scoreboard, MobCategory.MONSTER, TeamColor.RED, TeamColor.DARK_RED);
+        setupTeam(scoreboard, MobCategory.CREATURE, TeamColor.GREEN, TeamColor.DARK_GREEN);
+        setupTeam(scoreboard, MobCategory.AMBIENT, TeamColor.GRAY, TeamColor.DARK_GRAY);
+        setupTeam(scoreboard, MobCategory.AXOLOTLS, TeamColor.LIGHT_PURPLE, TeamColor.DARK_PURPLE);
+        setupTeam(scoreboard, MobCategory.UNDERGROUND_WATER_CREATURE, TeamColor.BLUE, TeamColor.DARK_BLUE);
+        setupTeam(scoreboard, MobCategory.WATER_CREATURE, TeamColor.AQUA, TeamColor.DARK_AQUA);
+        setupTeam(scoreboard, MobCategory.WATER_AMBIENT, TeamColor.AQUA, TeamColor.DARK_AQUA); // Re-use Aqua/Dark Aqua
+        setupTeam(scoreboard, MobCategory.MISC, TeamColor.YELLOW, TeamColor.GOLD);
     }
 
-    private static void setupTeam(Scoreboard scoreboard, MobCategory group, ChatFormatting low, ChatFormatting high) {
+    private static void setupTeam(Scoreboard scoreboard, MobCategory group, TeamColor low, TeamColor high) {
         String lowName = "equicap_" + group.getName() + "_l";
         String highName = "equicap_" + group.getName() + "_h";
 
         PlayerTeam lowTeam = scoreboard.getPlayerTeam(lowName);
         if (lowTeam == null) lowTeam = scoreboard.addPlayerTeam(lowName);
-        lowTeam.setColor(low);
+        lowTeam.setColor(Optional.ofNullable(low));
         LOW_TEAMS.put(group, lowTeam);
 
         PlayerTeam highTeam = scoreboard.getPlayerTeam(highName);
         if (highTeam == null) highTeam = scoreboard.addPlayerTeam(highName);
-        highTeam.setColor(high);
+        highTeam.setColor(Optional.ofNullable(high));
         HIGH_TEAMS.put(group, highTeam);
     }
 
